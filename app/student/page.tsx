@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   Card,
@@ -7,6 +12,16 @@ import {
 } from "@/components/ui/card";
 
 export default function StudentPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+
+    if (!user) {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
     <DashboardLayout>
       <h1 className="text-4xl font-bold mb-8">
@@ -53,13 +68,12 @@ export default function StudentPage() {
 
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle>Заголовок</CardTitle>
+          <CardTitle>Добро пожаловать!</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-slate-600">
-            Здесь будут отображаться заявки на практику, документы,
-            задачи и уведомления. После реализации авторизации информация
-            будет загружаться для каждого пользователя индивидуально.
+            Здесь будут отображаться ваши заявки на практику,
+            документы, задачи и уведомления.
           </p>
         </CardContent>
       </Card>
