@@ -3,15 +3,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/lib/login-schema";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { users } from "@/mock/users";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const {
@@ -24,6 +23,7 @@ export default function LoginPage() {
 
   const router = useRouter();
   const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   function onSubmit(data: LoginFormData) {
     const user = users.find(
@@ -84,12 +84,28 @@ export default function LoginPage() {
                 Пароль
               </Label>
 
-              <Input
-                id="password"
-                type="password"
-                placeholder="Введите пароль"
-                {...register("password")}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Введите пароль"
+                  {...register("password")}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
 
               {errors.password && (
                 <p className="text-red-500 text-sm mt-1">

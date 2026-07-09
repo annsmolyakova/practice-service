@@ -6,6 +6,8 @@ import { cohorts } from "@/mock/cohorts";
 
 import DashboardLayout from "@/components/layout/dashboard-layout";
 
+import ProtectedRoute from "@/components/layout/protected-route";
+
 import {
   Card,
   CardContent,
@@ -117,223 +119,225 @@ export default function CohortsPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold">
-          Когорты
-        </h1>
+    <ProtectedRoute allowedRole="admin">
+      <DashboardLayout>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">
+            Когорты
+          </h1>
 
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsOpen(true);
-          }}
-        >
-          Создать когорту
-        </Button>
-      </div>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsOpen(true);
+            }}
+          >
+            Создать когорту
+          </Button>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Список когорт
-          </CardTitle>
-        </CardHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Список когорт
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-3">
-                  Год
-                </th>
+          <CardContent>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3">
+                    Год
+                  </th>
 
-                <th className="text-left py-3">
-                  Прием заявок
-                </th>
+                  <th className="text-left py-3">
+                    Прием заявок
+                  </th>
 
-                <th className="text-left py-3">
-                  Практика
-                </th>
+                  <th className="text-left py-3">
+                    Практика
+                  </th>
 
-                <th className="text-left py-3">
-                  Действия
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {cohortList.map((cohort) => (
-                <tr
-                  key={cohort.id}
-                  className="border-b"
-                >
-                  <td className="py-4">
-                    {cohort.name}
-                  </td>
-
-                  <td>
-                    {formatDate(
-                      cohort.applicationStart
-                    )}{" "}
-                    —{" "}
-                    {formatDate(
-                      cohort.applicationEnd
-                    )}
-                  </td>
-
-                  <td>
-                    {formatDate(
-                      cohort.practiceStart
-                    )}{" "}
-                    —{" "}
-                    {formatDate(
-                      cohort.practiceEnd
-                    )}
-                  </td>
-
-                  <td>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          handleEditCohort(
-                            cohort
-                          )
-                        }
-                      >
-                        Редактировать
-                      </Button>
-
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                          handleDeleteCohort(
-                            cohort.id
-                          )
-                        }
-                      >
-                        Удалить
-                      </Button>
-                    </div>
-                  </td>
+                  <th className="text-left py-3">
+                    Действия
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+              </thead>
 
-      <Dialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingId !== null
-                ? "Редактирование когорты"
-                : "Создание когорты"}
-            </DialogTitle>
-          </DialogHeader>
+              <tbody>
+                {cohortList.map((cohort) => (
+                  <tr
+                    key={cohort.id}
+                    className="border-b"
+                  >
+                    <td className="py-4">
+                      {cohort.name}
+                    </td>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">
-                Название когорты
-              </Label>
+                    <td>
+                      {formatDate(
+                        cohort.applicationStart
+                      )}{" "}
+                      —{" "}
+                      {formatDate(
+                        cohort.applicationEnd
+                      )}
+                    </td>
 
-              <Input
-                id="name"
-                placeholder="Например, 2028"
-                value={name}
-                onChange={(e) =>
-                  setName(e.target.value)
-                }
-              />
+                    <td>
+                      {formatDate(
+                        cohort.practiceStart
+                      )}{" "}
+                      —{" "}
+                      {formatDate(
+                        cohort.practiceEnd
+                      )}
+                    </td>
+
+                    <td>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleEditCohort(
+                              cohort
+                            )
+                          }
+                        >
+                          Редактировать
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            handleDeleteCohort(
+                              cohort.id
+                            )
+                          }
+                        >
+                          Удалить
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        <Dialog
+          open={isOpen}
+          onOpenChange={setIsOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingId !== null
+                  ? "Редактирование когорты"
+                  : "Создание когорты"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">
+                  Название когорты
+                </Label>
+
+                <Input
+                  id="name"
+                  placeholder="Например, 2028"
+                  value={name}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="applicationStart">
+                  Начало приема заявок
+                </Label>
+
+                <Input
+                  id="applicationStart"
+                  type="date"
+                  value={applicationStart}
+                  onChange={(e) =>
+                    setApplicationStart(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="applicationEnd">
+                  Окончание приема заявок
+                </Label>
+
+                <Input
+                  id="applicationEnd"
+                  type="date"
+                  value={applicationEnd}
+                  onChange={(e) =>
+                    setApplicationEnd(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="practiceStart">
+                  Начало практики
+                </Label>
+
+                <Input
+                  id="practiceStart"
+                  type="date"
+                  value={practiceStart}
+                  onChange={(e) =>
+                    setPracticeStart(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="practiceEnd">
+                  Окончание практики
+                </Label>
+
+                <Input
+                  id="practiceEnd"
+                  type="date"
+                  value={practiceEnd}
+                  onChange={(e) =>
+                    setPracticeEnd(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={handleCreateCohort}
+              >
+                {editingId !== null
+                  ? "Сохранить изменения"
+                  : "Создать когорту"}
+              </Button>
             </div>
-
-            <div>
-              <Label htmlFor="applicationStart">
-                Начало приема заявок
-              </Label>
-
-              <Input
-                id="applicationStart"
-                type="date"
-                value={applicationStart}
-                onChange={(e) =>
-                  setApplicationStart(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="applicationEnd">
-                Окончание приема заявок
-              </Label>
-
-              <Input
-                id="applicationEnd"
-                type="date"
-                value={applicationEnd}
-                onChange={(e) =>
-                  setApplicationEnd(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="practiceStart">
-                Начало практики
-              </Label>
-
-              <Input
-                id="practiceStart"
-                type="date"
-                value={practiceStart}
-                onChange={(e) =>
-                  setPracticeStart(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="practiceEnd">
-                Окончание практики
-              </Label>
-
-              <Input
-                id="practiceEnd"
-                type="date"
-                value={practiceEnd}
-                onChange={(e) =>
-                  setPracticeEnd(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-            <Button
-              className="w-full"
-              onClick={handleCreateCohort}
-            >
-              {editingId !== null
-                ? "Сохранить изменения"
-                : "Создать когорту"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </DashboardLayout>
+          </DialogContent>
+        </Dialog>
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }
