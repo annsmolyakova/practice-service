@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useState
+} from "react";
 
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 
-import { applications } from "@/mock/applications";
+import {
+  getApplications,
+  saveApplications,
+} from "@/lib/application-storage";
+
 import { cohorts } from "@/mock/cohorts";
+
+import type { Application } from "@/types/application";
 
 import {
   Card,
@@ -29,16 +37,27 @@ import { Label } from "@/components/ui/label";
 
 export default function StudentApplicationsPage() {
   const [applicationList, setApplicationList] =
-    useState(applications);
+    useState<Application[]>(
+      getApplications()
+    );
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] =
+    useState(false);
 
-  const [fullName, setFullName] = useState("");
-  const [group, setGroup] = useState("");
-  const [course, setCourse] = useState("");
+  const [fullName, setFullName] =
+    useState("");
+
+  const [group, setGroup] =
+    useState("");
+
+  const [course, setCourse] =
+    useState("");
+
   const [desiredRole, setDesiredRole] =
     useState("");
-  const [stack, setStack] = useState("");
+
+  const [stack, setStack] =
+    useState("");
 
   function handleCreateApplication() {
     if (
@@ -56,7 +75,7 @@ export default function StudentApplicationsPage() {
       localStorage.getItem("user") || "{}"
     );
 
-    const newApplication = {
+    const newApplication: Application = {
       id: applicationList.length + 1,
       userId: user.id,
       cohortId: cohorts[0].id,
@@ -70,12 +89,21 @@ export default function StudentApplicationsPage() {
 
       status: "pending",
       reviewComment: "",
+      assignedRole: "",
     };
 
-    setApplicationList([
+    const updatedApplications = [
       ...applicationList,
       newApplication,
-    ]);
+    ];
+
+    setApplicationList(
+      updatedApplications
+    );
+
+    saveApplications(
+      updatedApplications
+    );
 
     setFullName("");
     setGroup("");
@@ -86,7 +114,9 @@ export default function StudentApplicationsPage() {
     setIsOpen(false);
   }
 
-  function getStatusText(status: string) {
+  function getStatusText(
+    status: string
+  ) {
     switch (status) {
       case "approved":
         return "Одобрена";
@@ -99,14 +129,34 @@ export default function StudentApplicationsPage() {
     }
   }
 
-  const user = JSON.parse(
-    localStorage.getItem("user") || "{}"
-  );
+  const [userId] =
+    useState<number | null>(() => {
+      if (
+        typeof window ===
+        "undefined"
+      ) {
+        return null;
+      }
+
+      const storedUser =
+        localStorage.getItem(
+          "user"
+        );
+
+      if (!storedUser) {
+        return null;
+      }
+
+      const user =
+        JSON.parse(storedUser);
+
+      return user.id;
+    });
 
   const myApplications =
     applicationList.filter(
       (application) =>
-        application.userId === user.id
+        application.userId === userId
     );
 
   return (
@@ -118,7 +168,9 @@ export default function StudentApplicationsPage() {
           </h1>
 
           <Button
-            onClick={() => setIsOpen(true)}
+            onClick={() =>
+              setIsOpen(true)
+            }
           >
             Подать заявку
           </Button>
@@ -127,50 +179,83 @@ export default function StudentApplicationsPage() {
         <div className="space-y-6">
           {myApplications.map(
             (application) => (
-              <Card key={application.id}>
+              <Card
+                key={application.id}
+              >
                 <CardHeader>
                   <CardTitle>
                     Заявка в когорту{" "}
-                    {application.cohortId}
+                    {
+                      application.cohortId
+                    }
                   </CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-2">
                   <p>
                     <b>ФИО:</b>{" "}
-                    {application.fullName}
+                    {
+                      application.fullName
+                    }
                   </p>
 
                   <p>
                     <b>Группа:</b>{" "}
-                    {application.group}
+                    {
+                      application.group
+                    }
                   </p>
 
                   <p>
                     <b>Курс:</b>{" "}
-                    {application.course}
+                    {
+                      application.course
+                    }
                   </p>
 
                   <p>
-                    <b>Желаемая роль:</b>{" "}
-                    {application.desiredRole}
+                    <b>
+                      Желаемая роль:
+                    </b>{" "}
+                    {
+                      application.desiredRole
+                    }
                   </p>
 
                   <p>
-                    <b>Стек:</b>{" "}
-                    {application.stack}
+                    <b>
+                      Стек:
+                    </b>{" "}
+                    {
+                      application.stack
+                    }
                   </p>
 
                   <p>
-                    <b>Статус:</b>{" "}
+                    <b>
+                      Статус:
+                    </b>{" "}
                     {getStatusText(
                       application.status
                     )}
                   </p>
 
+                  {application.assignedRole && (
+                    <p>
+                      <b>
+                        Назначенная роль:
+                      </b>{" "}
+                      {
+                        application.assignedRole
+                      }
+                    </p>
+                  )}
+
                   {application.reviewComment && (
                     <p>
-                      <b>Комментарий:</b>{" "}
+                      <b>
+                        Комментарий:
+                      </b>{" "}
                       {
                         application.reviewComment
                       }
@@ -184,7 +269,9 @@ export default function StudentApplicationsPage() {
 
         <Dialog
           open={isOpen}
-          onOpenChange={setIsOpen}
+          onOpenChange={
+            setIsOpen
+          }
         >
           <DialogContent>
             <DialogHeader>
@@ -195,39 +282,50 @@ export default function StudentApplicationsPage() {
 
             <div className="space-y-4">
               <div>
-                <Label>ФИО</Label>
+                <Label>
+                  ФИО
+                </Label>
 
                 <Input
-                  value={fullName}
+                  value={
+                    fullName
+                  }
                   onChange={(e) =>
                     setFullName(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                 />
               </div>
 
               <div>
-                <Label>Группа</Label>
+                <Label>
+                  Группа
+                </Label>
 
                 <Input
                   value={group}
                   onChange={(e) =>
                     setGroup(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                 />
               </div>
 
               <div>
-                <Label>Курс</Label>
+                <Label>
+                  Курс
+                </Label>
 
                 <Input
                   value={course}
                   onChange={(e) =>
                     setCourse(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                 />
@@ -239,10 +337,13 @@ export default function StudentApplicationsPage() {
                 </Label>
 
                 <Input
-                  value={desiredRole}
+                  value={
+                    desiredRole
+                  }
                   onChange={(e) =>
                     setDesiredRole(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                 />
@@ -257,7 +358,8 @@ export default function StudentApplicationsPage() {
                   value={stack}
                   onChange={(e) =>
                     setStack(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                 />
