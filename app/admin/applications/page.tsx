@@ -23,6 +23,16 @@ import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { roles } from "@/constants/roles";
+
 export default function AdminApplicationsPage() {
   const [applicationList, setApplicationList] =
     useState<Application[]>(
@@ -32,7 +42,18 @@ export default function AdminApplicationsPage() {
   const [rejectComment, setRejectComment] =
     useState("");
 
+  const [assignedRole, setAssignedRole] =
+    useState("");
+
   function approveApplication(id: number) {
+    if (!assignedRole.trim()) {
+      alert(
+        "Введите назначаемую роль"
+      );
+
+      return;
+    }
+
     const updatedApplications =
       applicationList.map(
         (application) =>
@@ -40,6 +61,7 @@ export default function AdminApplicationsPage() {
             ? {
                 ...application,
                 status: "approved",
+                assignedRole,
               }
             : application
       );
@@ -51,6 +73,8 @@ export default function AdminApplicationsPage() {
     saveApplications(
       updatedApplications
     );
+
+    setAssignedRole("");
   }
 
   function rejectApplication(id: number) {
@@ -176,39 +200,69 @@ export default function AdminApplicationsPage() {
                         )}
                       </td>
 
-                      <td>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            disabled={
-                              application.status !==
-                              "pending"
-                            }
-                            onClick={() =>
-                              approveApplication(
-                                application.id
-                              )
-                            }
-                          >
-                            Одобрить
-                          </Button>
+                      <td className="py-4">
+                        {application.status ===
+                          "pending" && (
+                          <div className="space-y-2">
+                            <Select
+                              value={assignedRole}
+                              onValueChange={(value) => setAssignedRole(value ?? "")}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите роль" />
+                              </SelectTrigger>
 
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={
-                              application.status !==
-                              "pending"
-                            }
-                            onClick={() =>
-                              rejectApplication(
-                                application.id
-                              )
-                            }
-                          >
-                            Отклонить
-                          </Button>
-                        </div>
+                              <SelectContent>
+                                {roles.map((role) => (
+                                  <SelectItem
+                                    key={role}
+                                    value={role}
+                                  >
+                                    {role}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            <Input
+                              placeholder="Комментарий при отклонении"
+                              value={
+                                rejectComment
+                              }
+                              onChange={(e) =>
+                                setRejectComment(
+                                  e.target
+                                    .value
+                                )
+                              }
+                            />
+
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  approveApplication(
+                                    application.id
+                                  )
+                                }
+                              >
+                                Одобрить
+                              </Button>
+
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() =>
+                                  rejectApplication(
+                                    application.id
+                                  )
+                                }
+                              >
+                                Отклонить
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         {application.status ===
                           "rejected" && (
@@ -234,20 +288,6 @@ export default function AdminApplicationsPage() {
                 )}
               </tbody>
             </table>
-
-            <div className="mt-6">
-              <Input
-                placeholder="Комментарий при отклонении"
-                value={
-                  rejectComment
-                }
-                onChange={(e) =>
-                  setRejectComment(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
           </CardContent>
         </Card>
       </DashboardLayout>

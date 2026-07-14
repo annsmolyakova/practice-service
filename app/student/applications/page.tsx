@@ -159,6 +159,15 @@ export default function StudentApplicationsPage() {
         application.userId === userId
     );
 
+  const hasPendingApplication =
+  myApplications.some(
+    (application) =>
+      application.status ===
+        "pending" ||
+      application.status ===
+        "approved"
+  );
+
   return (
     <ProtectedRoute allowedRole="student">
       <DashboardLayout>
@@ -166,13 +175,13 @@ export default function StudentApplicationsPage() {
           <h1 className="text-4xl font-bold">
             Мои заявки
           </h1>
-
           <Button
-            onClick={() =>
-              setIsOpen(true)
-            }
+            disabled={hasPendingApplication}
+            onClick={() => setIsOpen(true)}
           >
-            Подать заявку
+            {hasPendingApplication
+              ? "Заявка уже подана"
+              : "Подать заявку"}
           </Button>
         </div>
 
@@ -186,7 +195,11 @@ export default function StudentApplicationsPage() {
                   <CardTitle>
                     Заявка в когорту{" "}
                     {
-                      application.cohortId
+                      cohorts.find(
+                        (cohort) =>
+                          cohort.id ===
+                          application.cohortId
+                      )?.name
                     }
                   </CardTitle>
                 </CardHeader>
