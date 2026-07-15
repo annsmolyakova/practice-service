@@ -8,8 +8,8 @@ import {
   registerSchema,
   RegisterFormData,
 } from "@/lib/register-schema";
-
-import { users } from "@/mock/users";
+import { saveAuthSession } from "@/lib/auth-session";
+import { authApi } from "@/lib/practice-api";
 
 import {
   Card,
@@ -27,6 +27,7 @@ import { useState } from "react";
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [registerError, setRegisterError] = useState("");
 
   const [
     showConfirmPassword,
@@ -36,39 +37,21 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
-  function onSubmit(data: RegisterFormData) {
-    const existingUser = users.find(
-      (user) => user.email === data.email
-    );
+  async function onSubmit(data: RegisterFormData) {
+    setRegisterError("");
 
-    if (existingUser) {
-      alert(
-        "Пользователь с таким email уже существует"
-      );
-      return;
+    try {
+      const session = await authApi.register(data.email, data.password);
+      saveAuthSession(session);
+      router.push("/student");
+    } catch (error) {
+      setRegisterError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");
     }
-
-    const newUser = {
-      id: users.length + 1,
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-      role: "student" as const,
-    };
-
-    users.push(newUser);
-
-    localStorage.setItem(
-      "user",
-      JSON.stringify(newUser)
-    );
-
-    router.push("/student");
   }
 
   return (
@@ -85,24 +68,6 @@ export default function RegisterPage() {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5"
           >
-            <div>
-              <Label htmlFor="fullName">
-                ФИО
-              </Label>
-
-              <Input
-                id="fullName"
-                placeholder="Введите ФИО"
-                {...register("fullName")}
-              />
-
-              {errors.fullName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.fullName.message}
-                </p>
-              )}
-            </div>
-
             <div>
               <Label htmlFor="email">
                 Email
@@ -198,11 +163,18 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {registerError && (
+              <p className="text-center text-red-500 text-sm">
+                {registerError}
+              </p>
+            )}
+
             <Button
               type="submit"
               className="w-full"
+              disabled={isSubmitting}
             >
-              Зарегистрироваться
+              {isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
             </Button>
           </form>
         </CardContent>

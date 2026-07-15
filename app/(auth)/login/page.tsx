@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { users } from "@/mock/users";
+import { saveAuthSession } from "@/lib/auth-session";
+import { authApi } from "@/lib/practice-api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
@@ -25,26 +26,15 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  function onSubmit(data: LoginFormData) {
-    const user = users.find(
-      (user) =>
-        user.email === data.email &&
-        user.password === data.password
-    );
-
-    if (!user) {
-      setLoginError("Неверный email или пароль");
-      return;
-    }
-
+  async function onSubmit(data: LoginFormData) {
     setLoginError("");
 
-    localStorage.setItem("user", JSON.stringify(user));
-
-    if (user.role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/student");
+    try {
+      const session = await authApi.login(data.email, data.password);
+      saveAuthSession(session);
+      router.push(session.user.role === "admin" ? "/admin" : "/student");
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Не удалось войти");
     }
   }
 
@@ -120,8 +110,8 @@ export default function LoginPage() {
               </p>
             )}
 
-            <Button type="submit" className="w-full">
-              Войти
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Вход..." : "Войти"}
             </Button>
           </form>
         </CardContent>
