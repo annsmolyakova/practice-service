@@ -2,6 +2,15 @@
 
 import Link from "next/link";
 
+import {
+  Home,
+  Users,
+  ClipboardList,
+  FileText,
+  Briefcase,
+  LayoutDashboard,
+} from "lucide-react";
+
 export default function Sidebar() {
   const user =
     typeof window !== "undefined"
@@ -10,19 +19,39 @@ export default function Sidebar() {
         )
       : null;
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin =
+    user?.role === "admin";
 
   return (
-    <aside className="w-64 bg-slate-900 text-white min-h-screen p-6">
-      <h2 className="text-2xl font-bold mb-8">
+    <aside
+      className="
+        w-72
+        min-h-screen
+        bg-gradient-to-b
+        from-slate-900
+        to-slate-800
+        text-white
+        p-6
+        shadow-2xl
+      "
+    >
+      <h2 className="text-3xl font-bold mb-10 tracking-wide">
         Практика
       </h2>
 
       <nav className="space-y-2">
         <Link
           href="/"
-          className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+          className="
+            flex items-center gap-3
+            rounded-xl
+            px-4 py-3
+            hover:bg-slate-700
+            transition-all
+            duration-200
+          "
         >
+          <Home size={20} />
           Главная
         </Link>
 
@@ -30,29 +59,61 @@ export default function Sidebar() {
           <>
             <Link
               href="/admin/cohorts"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <Users size={20} />
               Когорты
             </Link>
 
             <Link
               href="/admin/applications"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <ClipboardList size={20} />
               Заявки
             </Link>
 
             <Link
               href="/admin/documents"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <FileText size={20} />
               Документы
             </Link>
 
             <Link
               href="/admin/tasks"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <Briefcase size={20} />
               Задачи
             </Link>
           </>
@@ -60,29 +121,61 @@ export default function Sidebar() {
           <>
             <Link
               href="/student"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <LayoutDashboard size={20} />
               Личный кабинет
             </Link>
 
             <Link
               href="/student/applications"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <ClipboardList size={20} />
               Мои заявки
             </Link>
 
             <Link
               href="/student/documents"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <FileText size={20} />
               Документы
             </Link>
 
             <Link
               href="/student/tasks"
-              className="block rounded-lg px-4 py-2 hover:bg-slate-700"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
             >
+              <Briefcase size={20} />
               Задачи
             </Link>
           </>
