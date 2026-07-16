@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/lib/login-schema";
@@ -12,6 +13,8 @@ import { authApi } from "@/lib/practice-api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { createAuthHref } from "@/lib/auth-return";
+import { useApplicationReturnTo } from "@/hooks/useApplicationReturnTo";
 
 export default function LoginPage() {
   const {
@@ -25,6 +28,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const returnTo = useApplicationReturnTo();
 
   async function onSubmit(data: LoginFormData) {
     setLoginError("");
@@ -32,7 +36,9 @@ export default function LoginPage() {
     try {
       const session = await authApi.login(data.email, data.password);
       saveAuthSession(session);
-      router.push(session.user.role === "admin" ? "/admin" : "/student");
+      router.push(
+        session.user.role === "admin" ? "/admin" : returnTo ?? "/student",
+      );
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "Не удалось войти");
     }
@@ -113,6 +119,16 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Вход..." : "Войти"}
             </Button>
+
+            <p className="text-center text-sm text-slate-600">
+              Нет аккаунта?{" "}
+              <Link
+                href={createAuthHref("/register", returnTo)}
+                className="text-blue-600 hover:underline"
+              >
+                Зарегистрироваться
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>
