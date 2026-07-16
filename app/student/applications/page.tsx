@@ -1,394 +1,163 @@
 "use client";
 
-import {
-  useState
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
-
-import {
-  getApplications,
-  saveApplications,
-} from "@/lib/application-storage";
-
-import { cohorts } from "@/mock/cohorts";
-
-import type { Application } from "@/types/application";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { applicationsApi } from "@/lib/practice-api";
+import type { PracticeApplication } from "@/types/api";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+const STATUS_LABELS: Record<PracticeApplication["status"], string> = {
+  pending: "На рассмотрении",
+  approved: "Одобрена",
+  rejected: "Отклонена",
+};
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+const STATUS_STYLES: Record<PracticeApplication["status"], string> = {
+  pending: "bg-amber-100 text-amber-800",
+  approved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-red-100 text-red-800",
+};
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 export default function StudentApplicationsPage() {
-  const [applicationList, setApplicationList] =
-    useState<Application[]>(
-      getApplications()
-    );
+  const [applications, setApplications] = useState<PracticeApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const [isOpen, setIsOpen] =
-    useState(false);
+  const loadApplications = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
 
-  const [fullName, setFullName] =
-    useState("");
-
-  const [group, setGroup] =
-    useState("");
-
-  const [course, setCourse] =
-    useState("");
-
-  const [desiredRole, setDesiredRole] =
-    useState("");
-
-  const [stack, setStack] =
-    useState("");
-
-  function handleCreateApplication() {
-    if (
-      !fullName ||
-      !group ||
-      !course ||
-      !desiredRole ||
-      !stack
-    ) {
-      alert("Заполните все поля");
-      return;
+    try {
+      const response = await applicationsApi.listMine();
+      setApplications(
+        [...response.items].sort(
+          (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+        ),
+      );
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Не удалось загрузить заявки");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
+  useEffect(() => {
+    let isCancelled = false;
 
-    const newApplication: Application = {
-      id: applicationList.length + 1,
-      userId: user.id,
-      cohortId: cohorts[0].id,
+    applicationsApi
+      .listMine()
+      .then((response) => {
+        if (!isCancelled) {
+          setApplications(
+            [...response.items].sort(
+              (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+            ),
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setLoadError(error instanceof Error ? error.message : "Не удалось загрузить заявки");
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      });
 
-      fullName,
-      group,
-      course,
-
-      desiredRole,
-      stack,
-
-      status: "pending",
-      reviewComment: "",
-      assignedRole: "",
+    return () => {
+      isCancelled = true;
     };
-
-    const updatedApplications = [
-      ...applicationList,
-      newApplication,
-    ];
-
-    setApplicationList(
-      updatedApplications
-    );
-
-    saveApplications(
-      updatedApplications
-    );
-
-    setFullName("");
-    setGroup("");
-    setCourse("");
-    setDesiredRole("");
-    setStack("");
-
-    setIsOpen(false);
-  }
-
-  function getStatusText(
-    status: string
-  ) {
-    switch (status) {
-      case "approved":
-        return "Одобрена";
-
-      case "rejected":
-        return "Отклонена";
-
-      default:
-        return "На рассмотрении";
-    }
-  }
-
-  const [userId] =
-    useState<number | null>(() => {
-      if (
-        typeof window ===
-        "undefined"
-      ) {
-        return null;
-      }
-
-      const storedUser =
-        localStorage.getItem(
-          "user"
-        );
-
-      if (!storedUser) {
-        return null;
-      }
-
-      const user =
-        JSON.parse(storedUser);
-
-      return user.id;
-    });
-
-  const myApplications =
-    applicationList.filter(
-      (application) =>
-        application.userId === userId
-    );
-
-  const hasPendingApplication =
-  myApplications.some(
-    (application) =>
-      application.status ===
-        "pending" ||
-      application.status ===
-        "approved"
-  );
+  }, []);
 
   return (
     <ProtectedRoute allowedRole="student">
       <DashboardLayout>
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">
-            Мои заявки
-          </h1>
-          <Button
-            disabled={hasPendingApplication}
-            onClick={() => setIsOpen(true)}
-          >
-            {hasPendingApplication
-              ? "Заявка уже подана"
-              : "Подать заявку"}
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold">Мои заявки</h1>
+          <p className="mt-2 text-slate-600">
+            Новая заявка подаётся по публичной ссылке выбранной когорты.
+          </p>
         </div>
 
-        <div className="space-y-6">
-          {myApplications.map(
-            (application) => (
-              <Card
-                key={application.id}
-              >
-                <CardHeader>
-                  <CardTitle>
-                    Заявка в когорту{" "}
-                    {
-                      cohorts.find(
-                        (cohort) =>
-                          cohort.id ===
-                          application.cohortId
-                      )?.name
-                    }
-                  </CardTitle>
+        {isLoading && <p className="text-slate-600">Загрузка заявок...</p>}
+
+        {!isLoading && loadError && (
+          <Card>
+            <CardContent className="space-y-4 py-8 text-center">
+              <p className="text-red-600">{loadError}</p>
+              <Button type="button" variant="outline" onClick={loadApplications}>
+                Повторить
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !loadError && applications.length === 0 && (
+          <Card>
+            <CardContent className="py-10 text-center text-slate-600">
+              У вас пока нет заявок.
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !loadError && applications.length > 0 && (
+          <div className="space-y-6">
+            {applications.map((application) => (
+              <Card key={application.id}>
+                <CardHeader className="flex-row items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <CardTitle>{application.cohort.title}</CardTitle>
+                    <p className="text-sm text-slate-500">
+                      Подана {formatDateTime(application.createdAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${STATUS_STYLES[application.status]}`}
+                  >
+                    {STATUS_LABELS[application.status]}
+                  </span>
                 </CardHeader>
 
-                <CardContent className="space-y-2">
-                  <p>
-                    <b>ФИО:</b>{" "}
-                    {
-                      application.fullName
-                    }
-                  </p>
-
-                  <p>
-                    <b>Группа:</b>{" "}
-                    {
-                      application.group
-                    }
-                  </p>
-
-                  <p>
-                    <b>Курс:</b>{" "}
-                    {
-                      application.course
-                    }
-                  </p>
-
-                  <p>
-                    <b>
-                      Желаемая роль:
-                    </b>{" "}
-                    {
-                      application.desiredRole
-                    }
-                  </p>
-
-                  <p>
-                    <b>
-                      Стек:
-                    </b>{" "}
-                    {
-                      application.stack
-                    }
-                  </p>
-
-                  <p>
-                    <b>
-                      Статус:
-                    </b>{" "}
-                    {getStatusText(
-                      application.status
-                    )}
-                  </p>
-
-                  {application.assignedRole && (
-                    <p>
-                      <b>
-                        Назначенная роль:
-                      </b>{" "}
-                      {
-                        application.assignedRole
-                      }
-                    </p>
+                <CardContent className="space-y-3">
+                  {application.track && (
+                    <div>
+                      <span className="font-medium">Назначенный трек:</span>{" "}
+                      {application.track.title}
+                      {application.track.description && (
+                        <p className="mt-1 text-sm text-slate-600">
+                          {application.track.description}
+                        </p>
+                      )}
+                    </div>
                   )}
 
-                  {application.reviewComment && (
-                    <p>
-                      <b>
-                        Комментарий:
-                      </b>{" "}
-                      {
-                        application.reviewComment
-                      }
-                    </p>
+                  {application.status === "rejected" && application.rejectionComment && (
+                    <div className="rounded-lg bg-red-50 p-4 text-red-800">
+                      <span className="font-medium">Причина отказа:</span>{" "}
+                      {application.rejectionComment}
+                    </div>
                   )}
+
+                  <p className="text-sm text-slate-500">
+                    Последнее обновление: {formatDateTime(application.updatedAt)}
+                  </p>
                 </CardContent>
               </Card>
-            )
-          )}
-        </div>
-
-        <Dialog
-          open={isOpen}
-          onOpenChange={
-            setIsOpen
-          }
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                Новая заявка
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label>
-                  ФИО
-                </Label>
-
-                <Input
-                  value={
-                    fullName
-                  }
-                  onChange={(e) =>
-                    setFullName(
-                      e.target
-                        .value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Группа
-                </Label>
-
-                <Input
-                  value={group}
-                  onChange={(e) =>
-                    setGroup(
-                      e.target
-                        .value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Курс
-                </Label>
-
-                <Input
-                  value={course}
-                  onChange={(e) =>
-                    setCourse(
-                      e.target
-                        .value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Желаемая роль
-                </Label>
-
-                <Input
-                  value={
-                    desiredRole
-                  }
-                  onChange={(e) =>
-                    setDesiredRole(
-                      e.target
-                        .value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Стек технологий
-                </Label>
-
-                <Input
-                  value={stack}
-                  onChange={(e) =>
-                    setStack(
-                      e.target
-                        .value
-                    )
-                  }
-                />
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={
-                  handleCreateApplication
-                }
-              >
-                Отправить заявку
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            ))}
+          </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );
