@@ -83,6 +83,7 @@ export default function CohortsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingCohort, setEditingCohort] = useState<Cohort | null>(null);
   const [changingStatusId, setChangingStatusId] = useState<string | null>(null);
+  const [copiedCohortId, setCopiedCohortId] = useState<string | null>(null);
 
   const {
     register,
@@ -151,6 +152,7 @@ export default function CohortsPage() {
     const endsAt = toDateTimeParts(cohort.endsAt);
 
     setEditingCohort(cohort);
+    setCopiedCohortId(null);
     setFormError("");
     reset({
       title: cohort.title,
@@ -258,6 +260,26 @@ export default function CohortsPage() {
     void loadCohorts(page);
   }
 
+  async function copyPublicLink(cohort: Cohort) {
+    setCopiedCohortId(null);
+
+    const publicUrl = new URL(
+      `/apply/${encodeURIComponent(cohort.publicSlug)}`,
+      window.location.origin,
+    ).toString();
+
+    try {
+      if (!navigator.clipboard) {
+        throw new Error("Clipboard API is unavailable");
+      }
+
+      await navigator.clipboard.writeText(publicUrl);
+      setCopiedCohortId(cohort.id);
+    } catch {
+      window.prompt("Скопируйте публичную ссылку", publicUrl);
+    }
+  }
+
   return (
     <ProtectedRoute allowedRole="admin">
       <DashboardLayout>
@@ -332,7 +354,16 @@ export default function CohortsPage() {
                           </span>
                         </td>
                         <td className="py-4">
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void copyPublicLink(cohort)}
+                            >
+                              {copiedCohortId === cohort.id
+                                ? "Ссылка скопирована"
+                                : "Скопировать ссылку"}
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
