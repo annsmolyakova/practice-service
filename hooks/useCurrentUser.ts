@@ -1,25 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
-export type User = {
-  id: number;
-  fullName: string;
-  email: string;
-  password: string;
-  role: "student" | "admin";
-};
+import type { User } from "@/types/api";
+
+const USER_STORAGE_KEY = "user";
+
+function subscribe() {
+  return () => undefined;
+}
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<User | null>(null);
+  const storedUser = useSyncExternalStore(
+    subscribe,
+    () => localStorage.getItem(USER_STORAGE_KEY),
+    () => null,
+  );
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  return useMemo(() => {
+    if (!storedUser) {
+      return null;
     }
-  }, []);
 
-  return user;
+    try {
+      return JSON.parse(storedUser) as User;
+    } catch {
+      return null;
+    }
+  }, [storedUser]);
 }
