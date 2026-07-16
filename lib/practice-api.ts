@@ -34,8 +34,16 @@ export const authApi = {
 };
 
 export const cohortsApi = {
-  list: () =>
-    apiRequest<{ items: Cohort[]; pagination: Pagination }>("/cohorts?limit=100"),
+  list: (page = 1, limit = 20) => {
+    const searchParams = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+
+    return apiRequest<{ items: Cohort[]; pagination: Pagination }>(
+      `/cohorts?${searchParams.toString()}`,
+    );
+  },
   get: (id: string) =>
     apiRequest<{ cohort: Cohort }>(`/cohorts/${id}`),
   create: (input: CreateCohortInput) =>
