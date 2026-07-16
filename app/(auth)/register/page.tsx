@@ -8,8 +8,8 @@ import {
   registerSchema,
   RegisterFormData,
 } from "@/lib/register-schema";
-
-import { users } from "@/mock/users";
+import { saveAuthSession } from "@/lib/auth-session";
+import { authApi } from "@/lib/practice-api";
 
 import {
   Card,
@@ -21,19 +21,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import {
-  Eye,
-  EyeOff,
-} from "lucide-react";
-
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
-
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [registerError, setRegisterError] = useState("");
 
   const [
     showConfirmPassword,
@@ -43,95 +37,37 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    resolver:
-      zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema),
   });
 
-  function onSubmit(
-    data: RegisterFormData
-  ) {
-    const existingUser =
-      users.find(
-        (user) =>
-          user.email ===
-          data.email
-      );
+  async function onSubmit(data: RegisterFormData) {
+    setRegisterError("");
 
-    if (existingUser) {
-      alert(
-        "Пользователь с таким email уже существует"
-      );
-
-      return;
+    try {
+      const session = await authApi.register(data.email, data.password);
+      saveAuthSession(session);
+      router.push("/student");
+    } catch (error) {
+      setRegisterError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");
     }
-
-    const newUser = {
-      id: users.length + 1,
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-      role: "student" as const,
-    };
-
-    users.push(newUser);
-
-    localStorage.setItem(
-      "user",
-      JSON.stringify(newUser)
-    );
-
-    router.push("/student");
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
-      <Card className="w-[480px] rounded-3xl border-0 shadow-2xl bg-white/90 backdrop-blur-xl">
+    <main className="min-h-screen flex items-center justify-center bg-slate-100">
+      <Card className="w-[450px]">
         <CardHeader>
-
-          <CardTitle className="text-4xl text-center font-bold tracking-tight">
+          <CardTitle className="text-3xl text-center">
             Регистрация
           </CardTitle>
-
-          <p className="text-center text-slate-500 mt-2">
-            Создание аккаунта в сервисе
-            организации практики
-          </p>
         </CardHeader>
 
         <CardContent>
           <form
-            onSubmit={handleSubmit(
-              onSubmit
-            )}
+            onSubmit={handleSubmit(onSubmit)}
             className="space-y-5"
           >
-            <div>
-              <Label htmlFor="fullName">
-                ФИО
-              </Label>
-
-              <Input
-                id="fullName"
-                placeholder="Введите ФИО"
-                className="h-12 rounded-xl mt-2"
-                {...register(
-                  "fullName"
-                )}
-              />
-
-              {errors.fullName && (
-                <p className="text-red-500 text-sm mt-2">
-                  {
-                    errors
-                      .fullName
-                      .message
-                  }
-                </p>
-              )}
-            </div>
-
             <div>
               <Label htmlFor="email">
                 Email
@@ -141,18 +77,12 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 placeholder="Введите email"
-                className="h-12 rounded-xl mt-2"
-                {...register(
-                  "email"
-                )}
+                {...register("email")}
               />
 
               {errors.email && (
-                <p className="text-red-500 text-sm mt-2">
-                  {
-                    errors.email
-                      .message
-                  }
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
                 </p>
               )}
             </div>
@@ -162,49 +92,32 @@ export default function RegisterPage() {
                 Пароль
               </Label>
 
-              <div className="relative mt-2">
+              <div className="relative">
                 <Input
                   id="password"
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
+                  type={showPassword ? "text" : "password"}
                   placeholder="Введите пароль"
-                  className="h-12 rounded-xl pr-12"
-                  {...register(
-                    "password"
-                  )}
+                  {...register("password")}
                 />
 
                 <button
                   type="button"
                   onClick={() =>
-                    setShowPassword(
-                      !showPassword
-                    )
+                    setShowPassword(!showPassword)
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
                 >
                   {showPassword ? (
-                    <EyeOff
-                      size={20}
-                    />
+                    <EyeOff size={18} />
                   ) : (
-                    <Eye
-                      size={20}
-                    />
+                    <Eye size={18} />
                   )}
                 </button>
               </div>
 
               {errors.password && (
-                <p className="text-red-500 text-sm mt-2">
-                  {
-                    errors
-                      .password
-                      .message
-                  }
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
                 </p>
               )}
             </div>
@@ -214,7 +127,7 @@ export default function RegisterPage() {
                 Повторите пароль
               </Label>
 
-              <div className="relative mt-2">
+              <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={
@@ -223,10 +136,7 @@ export default function RegisterPage() {
                       : "password"
                   }
                   placeholder="Повторите пароль"
-                  className="h-12 rounded-xl pr-12"
-                  {...register(
-                    "confirmPassword"
-                  )}
+                  {...register("confirmPassword")}
                 />
 
                 <button
@@ -236,36 +146,35 @@ export default function RegisterPage() {
                       !showConfirmPassword
                     )
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff
-                      size={20}
-                    />
+                    <EyeOff size={18} />
                   ) : (
-                    <Eye
-                      size={20}
-                    />
+                    <Eye size={18} />
                   )}
                 </button>
               </div>
 
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-2">
-                  {
-                    errors
-                      .confirmPassword
-                      .message
-                  }
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.confirmPassword.message}
                 </p>
               )}
             </div>
 
+            {registerError && (
+              <p className="text-center text-red-500 text-sm">
+                {registerError}
+              </p>
+            )}
+
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl text-base font-medium shadow-lg hover:scale-[1.02] transition-all"
+              className="w-full"
+              disabled={isSubmitting}
             >
-              Зарегистрироваться
+              {isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
             </Button>
           </form>
         </CardContent>
