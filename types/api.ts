@@ -124,4 +124,6 @@ export type CreateCohortInput = {
   isActive?: boolean;
 };
 
-export type UpdateCohortInput = Partial<CreateCohortInput>;
+export type UpdateCohortInput = Partial<Omit<CreateCohortInput, "description">> & {
+  description?: string | null;
+};
