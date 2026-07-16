@@ -14,10 +14,14 @@ export function useCurrentUser() {
   const storedUser = useSyncExternalStore(
     subscribe,
     () => localStorage.getItem(USER_STORAGE_KEY),
-    () => null,
+    () => undefined,
   );
 
   return useMemo(() => {
+    if (storedUser === undefined) {
+      return undefined;
+    }
+
     if (!storedUser) {
       return null;
     }

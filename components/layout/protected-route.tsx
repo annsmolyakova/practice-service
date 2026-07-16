@@ -18,6 +18,10 @@ export default function ProtectedRoute({
   const isAuthorized = user?.role === allowedRole;
 
   useEffect(() => {
+    if (user === undefined) {
+      return;
+    }
+
     if (!user) {
       router.push("/login");
       return;
