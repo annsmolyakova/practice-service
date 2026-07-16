@@ -4,13 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-
-type User = {
-  id: number;
-  fullName: string;
-  email: string;
-  role: string;
-};
+import { clearAuthSession, getAuthSession } from "@/lib/auth-session";
+import { authApi } from "@/lib/practice-api";
+import type { User } from "@/types/api";
 
 export default function Header() {
   const router = useRouter();
@@ -20,12 +16,17 @@ export default function Header() {
       return null;
     }
 
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    return getAuthSession()?.user ?? null;
   });
 
-  function handleLogout() {
-    localStorage.removeItem("user");
+  async function handleLogout() {
+    const session = getAuthSession();
+
+    if (session) {
+      await authApi.logout(session.refreshToken).catch(() => undefined);
+    }
+
+    clearAuthSession();
     router.push("/login");
   }
 
@@ -37,7 +38,7 @@ export default function Header() {
 
       <div className="flex items-center gap-4">
         <span className="text-sm text-slate-600">
-          {user?.fullName ?? "Пользователь"}
+          {user?.email ?? "Пользователь"}
         </span>
 
         <Button
