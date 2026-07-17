@@ -1,39 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
-
-import {
-  getDocuments,
-  saveDocuments,
-} from "@/lib/document-storage";
-
-import {
-  getApplications,
-} from "@/lib/application-storage";
-
-import type { Document } from "@/types/document";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import { Label } from "@/components/ui/label";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -41,338 +13,247 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { generatedDocuments } from "@/constants/generated-documents";
+import { downloadFile } from "@/lib/download-file";
+import { cohortsApi, documentsApi } from "@/lib/practice-api";
+import type { Cohort, CohortDocumentSummaryItem, DocumentKind } from "@/types/api";
 
-import { documentTypes } from "@/constants/document-types";
+function getDownloadKey(applicationId: string, kind: DocumentKind) {
+  return `${applicationId}:${kind}`;
+}
 
 export default function AdminDocumentsPage() {
-  const [documentList, setDocumentList] =
-    useState<Document[]>(
-      getDocuments()
-    );
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState("");
+  const [summary, setSummary] = useState<CohortDocumentSummaryItem[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [isCohortsLoading, setIsCohortsLoading] = useState(true);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+  const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
 
-  const [isOpen, setIsOpen] =
-    useState(false);
+  useEffect(() => {
+    let isCancelled = false;
 
-  const [selectedUserId, setSelectedUserId] =
-    useState<number | null>(null);
+    cohortsApi
+      .list(1, 100)
+      .then((response) => {
+        if (isCancelled) {
+          return;
+        }
 
-  const [selectedUserName, setSelectedUserName] =
-    useState("");
+        const sortedCohorts = [...response.items].sort(
+          (left, right) => Date.parse(right.startsAt) - Date.parse(left.startsAt),
+        );
+        const initialCohort = sortedCohorts.find((cohort) => cohort.isActive) ?? sortedCohorts[0];
 
-  const [selectedType, setSelectedType] =
-    useState("");
+        setCohorts(sortedCohorts);
+        setSelectedCohortId(initialCohort?.id ?? "");
+        setIsSummaryLoading(Boolean(initialCohort));
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setLoadError(error instanceof Error ? error.message : "Не удалось загрузить потоки");
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsCohortsLoading(false);
+        }
+      });
 
-  const applications =
-    getApplications();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
-  const approvedStudents =
-    applications.filter(
-      (application) =>
-        application.status ===
-        "approved"
-    );
-
-  function createDocument() {
-    if (
-      !selectedUserId ||
-      !selectedType
-    ) {
-      alert(
-        "Заполните все поля"
-      );
-
+  useEffect(() => {
+    if (!selectedCohortId) {
       return;
     }
 
-    const newDocument: Document = {
-      id: Date.now(),
+    let isCancelled = false;
 
-      userId: selectedUserId,
+    documentsApi
+      .getCohortSummary(selectedCohortId)
+      .then((response) => {
+        if (!isCancelled) {
+          setSummary(response.items);
+          setLoadError("");
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setLoadError(error instanceof Error ? error.message : "Не удалось загрузить документы");
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsSummaryLoading(false);
+        }
+      });
 
-      userName:
-        selectedUserName,
-
-      type: selectedType,
-
-      fileName:
-        `${selectedType}.docx`,
-
-      status: "created",
-
-      createdAt:
-        new Date().toLocaleDateString(
-          "ru-RU"
-        ),
+    return () => {
+      isCancelled = true;
     };
+  }, [reloadKey, selectedCohortId]);
 
-    const updatedDocuments = [
-      ...documentList,
-      newDocument,
-    ];
-
-    setDocumentList(
-      updatedDocuments
-    );
-
-    saveDocuments(
-      updatedDocuments
-    );
-
-    setSelectedUserId(
-      null
-    );
-
-    setSelectedUserName(
-      ""
-    );
-
-    setSelectedType(
-      ""
-    );
-
-    setIsOpen(false);
+  function handleCohortChange(cohortId: string | null) {
+    setSelectedCohortId(cohortId ?? "");
+    setSummary([]);
+    setLoadError("");
+    setDownloadErrors({});
+    setIsSummaryLoading(Boolean(cohortId));
   }
 
-  function getStatusText(
-    status: string
-  ) {
-    switch (status) {
-      case "signed":
-        return "Подписан";
+  async function handleDownload(applicationId: string, kind: DocumentKind) {
+    const key = getDownloadKey(applicationId, kind);
 
-      case "issued":
-        return "Выдан";
+    setDownloadingKey(key);
+    setDownloadErrors((current) => ({ ...current, [key]: "" }));
 
-      default:
-        return "Подготовлен";
+    try {
+      downloadFile(await documentsApi.download(applicationId, kind));
+    } catch (error) {
+      setDownloadErrors((current) => ({
+        ...current,
+        [key]: error instanceof Error ? error.message : "Не удалось сформировать документ",
+      }));
+    } finally {
+      setDownloadingKey(null);
     }
+  }
+
+  function retrySummary() {
+    setLoadError("");
+    setIsSummaryLoading(true);
+    setReloadKey((current) => current + 1);
   }
 
   return (
     <ProtectedRoute allowedRole="admin">
       <DashboardLayout>
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">
-            Документы
-          </h1>
-
-          <Button
-            onClick={() =>
-              setIsOpen(true)
-            }
-          >
-            Создать документ
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold">Документы</h1>
+          <p className="mt-2 text-slate-600">
+            Формируйте документы для одобренных заявок, когда все необходимые данные готовы.
+          </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              Список документов
-            </CardTitle>
+            <CardTitle>Документы потока</CardTitle>
           </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="max-w-md space-y-2">
+              <label className="text-sm font-medium" htmlFor="cohort-select">
+                Поток практики
+              </label>
+              <Select
+                value={selectedCohortId}
+                onValueChange={handleCohortChange}
+                disabled={isCohortsLoading}
+              >
+                <SelectTrigger id="cohort-select" className="w-full">
+                  <SelectValue
+                    placeholder={isCohortsLoading ? "Загрузка потоков..." : "Выберите поток"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {cohorts.map((cohort) => (
+                    <SelectItem key={cohort.id} value={cohort.id}>
+                      {cohort.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <CardContent>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3">
-                    Студент
-                  </th>
+            {isSummaryLoading && <p className="text-slate-600">Проверяем готовность документов...</p>}
 
-                  <th className="text-left py-3">
-                    Документ
-                  </th>
-
-                  <th className="text-left py-3">
-                    Файл
-                  </th>
-
-                  <th className="text-left py-3">
-                    Статус
-                  </th>
-
-                  <th className="text-left py-3">
-                    Дата
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {documentList.map(
-                  (document) => (
-                    <tr
-                      key={
-                        document.id
-                      }
-                      className="border-b"
-                    >
-                      <td className="py-4">
-                        {
-                          document.userName
-                        }
-                      </td>
-
-                      <td>
-                        {
-                          document.type
-                        }
-                      </td>
-
-                      <td>
-                        {
-                          document.fileName
-                        }
-                      </td>
-
-                      <td>
-                        {getStatusText(
-                          document.status
-                        )}
-                      </td>
-
-                      <td>
-                        {
-                          document.createdAt
-                        }
-                      </td>
-                    </tr>
-                  )
+            {!isSummaryLoading && loadError && (
+              <div className="space-y-3 rounded-lg bg-red-50 p-4 text-red-800">
+                <p>{loadError}</p>
+                {selectedCohortId && (
+                  <Button type="button" variant="outline" onClick={retrySummary}>
+                    Повторить
+                  </Button>
                 )}
-              </tbody>
-            </table>
+              </div>
+            )}
+
+            {!isCohortsLoading && cohorts.length === 0 && !loadError && (
+              <p className="text-slate-600">Сначала создайте поток практики.</p>
+            )}
+
+            {!isSummaryLoading && !loadError && selectedCohortId && summary.length === 0 && (
+              <p className="text-slate-600">В этом потоке пока нет одобренных заявок.</p>
+            )}
+
+            {!isSummaryLoading && !loadError && summary.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Студент</TableHead>
+                    {generatedDocuments.map((definition) => (
+                      <TableHead key={definition.kind}>{definition.title}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.map((item) => (
+                    <TableRow key={item.applicationId}>
+                      <TableCell className="font-medium">
+                        {item.fullName ?? `Студент ${item.userId.slice(0, 8)}`}
+                      </TableCell>
+                      {generatedDocuments.map((definition) => {
+                        const isReady = item[definition.readinessKey];
+                        const key = getDownloadKey(item.applicationId, definition.kind);
+                        const error = downloadErrors[key];
+
+                        return (
+                          <TableCell key={definition.kind} className="min-w-48 whitespace-normal">
+                            <div className="space-y-2">
+                              <span
+                                className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                  isReady
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {isReady ? "Готов" : "Не готов"}
+                              </span>
+                              <div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={!isReady || downloadingKey !== null}
+                                  onClick={() => handleDownload(item.applicationId, definition.kind)}
+                                >
+                                  {downloadingKey === key ? "Формирование..." : "Сформировать DOCX"}
+                                </Button>
+                              </div>
+                              {error && <p className="text-xs text-red-600">{error}</p>}
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
-
-        <Dialog
-          open={isOpen}
-          onOpenChange={setIsOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                Создание документа
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label>
-                  Студент
-                </Label>
-
-                <Select
-                  value={
-                    selectedUserId?.toString() ||
-                    ""
-                  }
-                  onValueChange={(
-                    value
-                  ) => {
-                    const student =
-                      approvedStudents.find(
-                        (
-                          application
-                        ) =>
-                          application.userId ===
-                          Number(
-                            value
-                          )
-                      );
-
-                    setSelectedUserId(
-                      Number(
-                        value
-                      )
-                    );
-
-                    setSelectedUserName(
-                      student?.fullName ||
-                        ""
-                    );
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите студента" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {approvedStudents.map(
-                      (
-                        student
-                      ) => (
-                        <SelectItem
-                          key={
-                            student.userId
-                          }
-                          value={student.userId.toString()}
-                        >
-                          {
-                            student.fullName
-                          }
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>
-                  Тип документа
-                </Label>
-
-                <Select
-                  value={
-                    selectedType
-                  }
-                  onValueChange={(
-                    value
-                  ) =>
-                    setSelectedType(
-                      value ??
-                        ""
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите тип документа" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {documentTypes.map(
-                      (
-                        type
-                      ) => (
-                        <SelectItem
-                          key={
-                            type
-                          }
-                          value={
-                            type
-                          }
-                        >
-                          {
-                            type
-                          }
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={
-                  createDocument
-                }
-              >
-                Создать документ
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </DashboardLayout>
     </ProtectedRoute>
   );

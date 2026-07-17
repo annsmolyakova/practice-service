@@ -1,13 +1,15 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiFileRequest, apiRequest } from "@/lib/api-client";
 import type {
   ApplicationAnswerInput,
   AuthSession,
   Cohort,
+  CohortDocumentSummaryItem,
   CohortFormField,
   CohortFormFieldInput,
   CohortTrack,
   CreateCohortTrackInput,
   CreateCohortInput,
+  DocumentKind,
   Pagination,
   PracticeApplication,
   PracticeProfile,
@@ -116,4 +118,16 @@ export const tracksApi = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+};
+
+export const documentsApi = {
+  getCohortSummary: (cohortId: string) =>
+    apiRequest<{ items: CohortDocumentSummaryItem[] }>(
+      `/documents/cohorts/${cohortId}/summary`,
+    ),
+  download: (applicationId: string, kind: DocumentKind) =>
+    apiFileRequest(
+      `/documents/applications/${applicationId}/${kind}`,
+      `${kind}-${applicationId}.docx`,
+    ),
 };

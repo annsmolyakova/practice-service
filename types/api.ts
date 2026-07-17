@@ -129,6 +129,22 @@ export type PracticeApplication = {
   answers: ApplicationAnswer[];
 };
 
+export type DocumentKind =
+  | "individual-assignment"
+  | "supervisor-review"
+  | "report-title-page";
+
+export type CohortDocumentSummaryItem = {
+  applicationId: string;
+  userId: string;
+  fullName: string | null;
+  individualAssignmentReady: boolean;
+  supervisorReviewReady: boolean;
+  practiceReportUploaded: boolean;
+  practiceReportApproved: boolean;
+  reportTitlePageReady: boolean;
+};
+
 export type Pagination = {
   page: number;
   limit: number;
