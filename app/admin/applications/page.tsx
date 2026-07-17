@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import PracticeReviewDialog from "@/components/admin/practice-review-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export default function AdminApplicationsPage() {
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [reviewApplication, setReviewApplication] = useState<PracticeApplication | null>(null);
   const [cohortsError, setCohortsError] = useState("");
   const [applicationsError, setApplicationsError] = useState("");
   const [isCohortsLoading, setIsCohortsLoading] = useState(true);
@@ -429,11 +431,30 @@ export default function AdminApplicationsPage() {
                         </div>
                       </div>
                     )}
+
+                    {application.status === "approved" && (
+                      <div className="border-t pt-5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setReviewApplication(application)}
+                        >
+                          Заполнить отзыв
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+        )}
+
+        {reviewApplication && (
+          <PracticeReviewDialog
+            application={reviewApplication}
+            onClose={() => setReviewApplication(null)}
+          />
         )}
       </DashboardLayout>
     </ProtectedRoute>
