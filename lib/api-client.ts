@@ -57,10 +57,10 @@ async function refreshSession(): Promise<AuthSession | null> {
   return refreshedSession;
 }
 
-export async function apiRequest<T>(
+async function authenticatedFetch(
   path: string,
   options: ApiRequestOptions = {},
-): Promise<T> {
+): Promise<Response> {
   const {
     authenticated = true,
     retryOnUnauthorized = true,
@@ -87,12 +87,55 @@ export async function apiRequest<T>(
     const refreshedSession = await refreshSession();
 
     if (refreshedSession) {
-      return apiRequest<T>(path, {
+      return authenticatedFetch(path, {
         ...options,
         retryOnUnauthorized: false,
       });
     }
   }
 
+  return response;
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<T> {
+  const response = await authenticatedFetch(path, options);
+
   return parseResponse<T>(response);
+}
+
+export type ApiFile = {
+  blob: Blob;
+  fileName: string;
+};
+
+function getResponseFileName(response: Response, fallbackFileName: string) {
+  const contentDisposition = response.headers.get("Content-Disposition");
+  const encodedFileName = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const quotedFileName = contentDisposition?.match(/filename="([^"]+)"/i)?.[1];
+
+  if (encodedFileName) {
+    return decodeURIComponent(encodedFileName);
+  }
+
+  return quotedFileName ?? fallbackFileName;
+}
+
+export async function apiFileRequest(
+  path: string,
+  fallbackFileName: string,
+  options: ApiRequestOptions = {},
+): Promise<ApiFile> {
+  const response = await authenticatedFetch(path, options);
+
+  if (!response.ok) {
+    await parseResponse<never>(response);
+  }
+
+  return {
+    blob: await response.blob(),
+    fileName: getResponseFileName(response, fallbackFileName),
+  };
 }
