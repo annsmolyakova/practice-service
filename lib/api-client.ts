@@ -77,7 +77,11 @@ async function authenticatedFetch(
   const session = getAuthSession();
   const requestHeaders = new Headers(headers);
 
-  if (requestOptions.body && !requestHeaders.has("Content-Type")) {
+  if (
+    requestOptions.body &&
+    !(requestOptions.body instanceof FormData) &&
+    !requestHeaders.has("Content-Type")
+  ) {
     requestHeaders.set("Content-Type", "application/json");
   }
 

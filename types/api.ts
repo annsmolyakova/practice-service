@@ -145,6 +145,17 @@ export type CohortDocumentSummaryItem = {
   reportTitlePageReady: boolean;
 };
 
+export type PracticeReport = {
+  id: string;
+  applicationId: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PracticeReview = {
   id: string;
   applicationId: string;
