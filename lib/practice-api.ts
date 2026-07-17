@@ -1,12 +1,14 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiFileRequest, apiRequest } from "@/lib/api-client";
 import type {
   ApplicationAnswerInput,
   AuthSession,
   Cohort,
+  CohortDocumentSummaryItem,
   CohortFormField,
   CohortFormFieldInput,
   CohortTrack,
   CreateCohortInput,
+  DocumentKind,
   Pagination,
   PracticeApplication,
   PublicCohort,
@@ -98,4 +100,16 @@ export const applicationsApi = {
 export const tracksApi = {
   listByCohort: (cohortId: string) =>
     apiRequest<{ items: CohortTrack[] }>(`/tracks/cohorts/${cohortId}`),
+};
+
+export const documentsApi = {
+  getCohortSummary: (cohortId: string) =>
+    apiRequest<{ items: CohortDocumentSummaryItem[] }>(
+      `/documents/cohorts/${cohortId}/summary`,
+    ),
+  download: (applicationId: string, kind: DocumentKind) =>
+    apiFileRequest(
+      `/documents/applications/${applicationId}/${kind}`,
+      `${kind}-${applicationId}.docx`,
+    ),
 };
