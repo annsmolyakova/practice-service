@@ -65,6 +65,7 @@ export default function AdminApplicationsPage() {
   const [applicationsError, setApplicationsError] = useState("");
   const [isCohortsLoading, setIsCohortsLoading] = useState(true);
   const [isApplicationsLoading, setIsApplicationsLoading] = useState(false);
+  const selectedCohort = cohorts.find((cohort) => cohort.id === selectedCohortId);
 
   useEffect(() => {
     let isCancelled = false;
@@ -285,7 +286,7 @@ export default function AdminApplicationsPage() {
             ) : (
               <Select value={selectedCohortId} onValueChange={(value) => handleCohortChange(value ?? "")}>
                 <SelectTrigger className="max-w-lg">
-                  <SelectValue placeholder="Выберите когорту" />
+                  <SelectValue placeholder="Выберите когорту">{selectedCohort?.title}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {cohorts.map((cohort) => (
