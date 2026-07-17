@@ -13,9 +13,11 @@ import type {
   Pagination,
   PracticeApplication,
   PracticeProfile,
+  PracticeReview,
   PublicCohort,
   UpdateCohortInput,
   UpdatePracticeProfileInput,
+  UpsertPracticeReviewInput,
 } from "@/types/api";
 
 export const authApi = {
@@ -130,4 +132,14 @@ export const documentsApi = {
       `/documents/applications/${applicationId}/${kind}`,
       `${kind}-${applicationId}.docx`,
     ),
+};
+
+export const reviewsApi = {
+  getByApplication: (applicationId: string) =>
+    apiRequest<{ review: PracticeReview | null }>(`/reviews/applications/${applicationId}`),
+  upsert: (applicationId: string, input: UpsertPracticeReviewInput) =>
+    apiRequest<{ review: PracticeReview }>(`/reviews/applications/${applicationId}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
 };

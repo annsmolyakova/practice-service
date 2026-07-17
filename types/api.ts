@@ -145,6 +145,35 @@ export type CohortDocumentSummaryItem = {
   reportTitlePageReady: boolean;
 };
 
+export type PracticeReview = {
+  id: string;
+  applicationId: string;
+  activities: string | null;
+  characteristic: string | null;
+  isEmployed: boolean | null;
+  employmentPosition: string | null;
+  isNextPracticeOffered: boolean | null;
+  isEmploymentOffered: boolean | null;
+  suggestions: string | null;
+  grade: string | null;
+  isReady: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpsertPracticeReviewInput = Pick<
+  PracticeReview,
+  | "activities"
+  | "characteristic"
+  | "isEmployed"
+  | "employmentPosition"
+  | "isNextPracticeOffered"
+  | "isEmploymentOffered"
+  | "suggestions"
+  | "grade"
+  | "isReady"
+>;
+
 export type Pagination = {
   page: number;
   limit: number;
