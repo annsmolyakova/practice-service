@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import CohortDateTimeFields from "@/components/admin/cohort-date-time-fields";
 import CohortApplicationFormDialog from "@/components/admin/cohort-application-form-dialog";
+import CohortTracksDialog from "@/components/admin/cohort-tracks-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export default function CohortsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingCohort, setEditingCohort] = useState<Cohort | null>(null);
   const [formEditorCohort, setFormEditorCohort] = useState<Cohort | null>(null);
+  const [tracksEditorCohort, setTracksEditorCohort] = useState<Cohort | null>(null);
   const [changingStatusId, setChangingStatusId] = useState<string | null>(null);
   const [copiedCohortId, setCopiedCohortId] = useState<string | null>(null);
 
@@ -360,6 +362,13 @@ export default function CohortsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => setTracksEditorCohort(cohort)}
+                            >
+                              Треки
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => setFormEditorCohort(cohort)}
                             >
                               Анкета
@@ -533,6 +542,13 @@ export default function CohortsPage() {
           <CohortApplicationFormDialog
             cohort={formEditorCohort}
             onClose={() => setFormEditorCohort(null)}
+          />
+        )}
+
+        {tracksEditorCohort && (
+          <CohortTracksDialog
+            cohort={tracksEditorCohort}
+            onClose={() => setTracksEditorCohort(null)}
           />
         )}
       </DashboardLayout>
