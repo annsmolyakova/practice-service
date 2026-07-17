@@ -13,6 +13,7 @@ import type {
   Pagination,
   PracticeApplication,
   PracticeProfile,
+  PracticeReport,
   PracticeReview,
   PublicCohort,
   UpdateCohortInput,
@@ -131,6 +132,30 @@ export const documentsApi = {
     apiFileRequest(
       `/documents/applications/${applicationId}/${kind}`,
       `${kind}-${applicationId}.docx`,
+  ),
+};
+
+export const reportsApi = {
+  getByApplication: (applicationId: string) =>
+    apiRequest<{ report: PracticeReport | null }>(`/reports/applications/${applicationId}`),
+  upload: (applicationId: string, file: File) => {
+    const body = new FormData();
+    body.set("report", file);
+
+    return apiRequest<{ report: PracticeReport }>(`/reports/applications/${applicationId}`, {
+      method: "PUT",
+      body,
+    });
+  },
+  download: (applicationId: string, fallbackFileName: string) =>
+    apiFileRequest(`/reports/applications/${applicationId}/file`, fallbackFileName),
+  updateApproval: (applicationId: string, isApproved: boolean) =>
+    apiRequest<{ report: PracticeReport }>(
+      `/reports/applications/${applicationId}/approval`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isApproved }),
+      },
     ),
 };
 
