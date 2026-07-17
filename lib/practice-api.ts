@@ -9,8 +9,10 @@ import type {
   CreateCohortInput,
   Pagination,
   PracticeApplication,
+  PracticeProfile,
   PublicCohort,
   UpdateCohortInput,
+  UpdatePracticeProfileInput,
 } from "@/types/api";
 
 export const authApi = {
@@ -30,6 +32,16 @@ export const authApi = {
     apiRequest<void>("/auth/logout", {
       method: "POST",
       body: JSON.stringify({ refreshToken }),
+    }),
+};
+
+export const profilesApi = {
+  getMine: () =>
+    apiRequest<{ profile: PracticeProfile | null }>("/profiles/me"),
+  updateMine: (input: UpdatePracticeProfileInput) =>
+    apiRequest<{ profile: PracticeProfile }>("/profiles/me", {
+      method: "PATCH",
+      body: JSON.stringify(input),
     }),
 };
 
