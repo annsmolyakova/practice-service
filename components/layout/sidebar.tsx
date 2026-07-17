@@ -9,6 +9,7 @@ import {
   FileText,
   Briefcase,
   LayoutDashboard,
+  UserRound,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -147,6 +148,21 @@ export default function Sidebar() {
             >
               <ClipboardList size={20} />
               Мои заявки
+            </Link>
+
+            <Link
+              href="/student/profile"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
+            >
+              <UserRound size={20} />
+              Профиль практики
             </Link>
 
             <Link

@@ -14,6 +14,22 @@ export type AuthSession = {
   refreshToken: string;
 };
 
+export type PracticeProfile = {
+  id: string;
+  userId: string;
+  fullName: string | null;
+  specialty: string | null;
+  educationProgram: string | null;
+  group: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpdatePracticeProfileInput = Pick<
+  PracticeProfile,
+  "fullName" | "specialty" | "educationProgram" | "group"
+>;
+
 export type Cohort = {
   id: string;
   title: string;
