@@ -1,4 +1,5 @@
 import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-session";
+import { getApiErrorMessage } from "@/lib/api-error-message";
 import type { AuthSession } from "@/types/api";
 
 type ApiRequestOptions = RequestInit & {
@@ -24,11 +25,11 @@ async function parseResponse<T>(response: Response): Promise<T> {
   const data = (await response.json().catch(() => null)) as T | { message?: string } | null;
 
   if (!response.ok) {
-    const message = typeof data === "object" && data !== null && "message" in data && data.message
+    const serverMessage = typeof data === "object" && data !== null && "message" in data
       ? data.message
-      : "Не удалось выполнить запрос";
+      : undefined;
 
-    throw new ApiError(message, response.status);
+    throw new ApiError(getApiErrorMessage(serverMessage, response.status), response.status);
   }
 
   return data as T;
@@ -41,11 +42,17 @@ async function refreshSession(): Promise<AuthSession | null> {
     return null;
   }
 
-  const response = await fetch("/api/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: session.refreshToken }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: session.refreshToken }),
+    });
+  } catch {
+    throw new ApiError("Не удалось связаться с сервером", 0);
+  }
 
   if (!response.ok) {
     clearAuthSession();
@@ -78,10 +85,16 @@ async function authenticatedFetch(
     requestHeaders.set("Authorization", `Bearer ${session.accessToken}`);
   }
 
-  const response = await fetch(`/api${path}`, {
-    ...requestOptions,
-    headers: requestHeaders,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`/api${path}`, {
+      ...requestOptions,
+      headers: requestHeaders,
+    });
+  } catch {
+    throw new ApiError("Не удалось связаться с сервером", 0);
+  }
 
   if (authenticated && response.status === 401 && retryOnUnauthorized) {
     const refreshedSession = await refreshSession();
