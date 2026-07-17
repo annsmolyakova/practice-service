@@ -6,6 +6,7 @@ import type {
   CohortFormField,
   CohortFormFieldInput,
   CohortTrack,
+  CreateCohortTrackInput,
   CreateCohortInput,
   Pagination,
   PracticeApplication,
@@ -98,4 +99,9 @@ export const applicationsApi = {
 export const tracksApi = {
   listByCohort: (cohortId: string) =>
     apiRequest<{ items: CohortTrack[] }>(`/tracks/cohorts/${cohortId}`),
+  create: (cohortId: string, input: CreateCohortTrackInput) =>
+    apiRequest<{ track: CohortTrack }>(`/tracks/cohorts/${cohortId}`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
 };

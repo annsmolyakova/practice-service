@@ -75,6 +75,13 @@ export type CohortTrack = {
   updatedAt: string;
 };
 
+export type CreateCohortTrackInput = {
+  title: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
 export type ApplicationAnswer = {
   id: string;
   applicationId: string;
