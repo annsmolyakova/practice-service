@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { generatedDocuments } from "@/constants/generated-documents";
 import { downloadFile } from "@/lib/download-file";
-import { cohortsApi, documentsApi } from "@/lib/practice-api";
+import { cohortsApi, documentsApi, reportsApi } from "@/lib/practice-api";
 import type { Cohort, CohortDocumentSummaryItem, DocumentKind } from "@/types/api";
 
 function getDownloadKey(applicationId: string, kind: DocumentKind) {
@@ -39,6 +39,7 @@ export default function AdminDocumentsPage() {
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+  const [approvingApplicationId, setApprovingApplicationId] = useState<string | null>(null);
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -133,6 +134,44 @@ export default function AdminDocumentsPage() {
     }
   }
 
+  async function handleReportDownload(applicationId: string) {
+    const key = `${applicationId}:report`;
+
+    setDownloadingKey(key);
+    setDownloadErrors((current) => ({ ...current, [key]: "" }));
+
+    try {
+      downloadFile(await reportsApi.download(applicationId, `practice-report-${applicationId}`));
+    } catch (error) {
+      setDownloadErrors((current) => ({
+        ...current,
+        [key]: error instanceof Error ? error.message : "Не удалось скачать отчёт",
+      }));
+    } finally {
+      setDownloadingKey(null);
+    }
+  }
+
+  async function handleReportApproval(applicationId: string, isApproved: boolean) {
+    const key = `${applicationId}:approval`;
+
+    setApprovingApplicationId(applicationId);
+    setDownloadErrors((current) => ({ ...current, [key]: "" }));
+
+    try {
+      await reportsApi.updateApproval(applicationId, isApproved);
+      const response = await documentsApi.getCohortSummary(selectedCohortId);
+      setSummary(response.items);
+    } catch (error) {
+      setDownloadErrors((current) => ({
+        ...current,
+        [key]: error instanceof Error ? error.message : "Не удалось изменить статус отчёта",
+      }));
+    } finally {
+      setApprovingApplicationId(null);
+    }
+  }
+
   function retrySummary() {
     setLoadError("");
     setIsSummaryLoading(true);
@@ -204,6 +243,7 @@ export default function AdminDocumentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Студент</TableHead>
+                    <TableHead>Отчёт студента</TableHead>
                     {generatedDocuments.map((definition) => (
                       <TableHead key={definition.kind}>{definition.title}</TableHead>
                     ))}
@@ -214,6 +254,66 @@ export default function AdminDocumentsPage() {
                     <TableRow key={item.applicationId}>
                       <TableCell className="font-medium">
                         {item.fullName ?? `Студент ${item.userId.slice(0, 8)}`}
+                      </TableCell>
+                      <TableCell className="min-w-56 whitespace-normal">
+                        {!item.practiceReportUploaded ? (
+                          <span className="inline-block rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                            Не загружен
+                          </span>
+                        ) : (
+                          <div className="space-y-2">
+                            <span
+                              className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                item.practiceReportApproved
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {item.practiceReportApproved ? "Одобрен" : "Ожидает проверки"}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={downloadingKey !== null || approvingApplicationId !== null}
+                                onClick={() => handleReportDownload(item.applicationId)}
+                              >
+                                {downloadingKey === `${item.applicationId}:report`
+                                  ? "Скачивание..."
+                                  : "Скачать"}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={item.practiceReportApproved ? "outline" : "default"}
+                                disabled={downloadingKey !== null || approvingApplicationId !== null}
+                                onClick={() =>
+                                  handleReportApproval(
+                                    item.applicationId,
+                                    !item.practiceReportApproved,
+                                  )
+                                }
+                              >
+                                {approvingApplicationId === item.applicationId
+                                  ? "Сохранение..."
+                                  : item.practiceReportApproved
+                                    ? "Отозвать"
+                                    : "Одобрить"}
+                              </Button>
+                            </div>
+                            {downloadErrors[`${item.applicationId}:report`] && (
+                              <p className="text-xs text-red-600">
+                                {downloadErrors[`${item.applicationId}:report`]}
+                              </p>
+                            )}
+                            {downloadErrors[`${item.applicationId}:approval`] && (
+                              <p className="text-xs text-red-600">
+                                {downloadErrors[`${item.applicationId}:approval`]}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       {generatedDocuments.map((definition) => {
                         const isReady = item[definition.readinessKey];
