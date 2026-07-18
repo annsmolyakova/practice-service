@@ -3,18 +3,16 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import ProtectedRoute from "@/components/layout/protected-route";
-
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import ProtectedRoute from "@/components/layout/protected-route";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { getStudentDashboardStats } from "@/lib/dashboard-statistics";
 
 export default function StudentPage() {
   const router = useRouter();
+  const { stats, isLoading, loadError, reload } = useDashboardStats(getStudentDashboardStats);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -27,47 +25,50 @@ export default function StudentPage() {
   return (
     <ProtectedRoute allowedRole="student">
       <DashboardLayout>
-        <h1 className="text-4xl font-bold mb-8">
-          Личный кабинет студента
-        </h1>
+        <h1 className="mb-8 text-4xl font-bold">Личный кабинет студента</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {loadError ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Мои заявки</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">1</p>
-              <p className="text-sm text-slate-500 mt-2">
-                Поданная заявка на практику
-              </p>
+            <CardContent className="space-y-4 py-8 text-center">
+              <p className="text-red-600">{loadError}</p>
+              <Button type="button" variant="outline" onClick={reload}>
+                Повторить
+              </Button>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Мои заявки</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold">{isLoading ? "…" : stats?.applications}</p>
+                <p className="mt-2 text-sm text-slate-500">Поданные заявки на практику</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Документы</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">3</p>
-              <p className="text-sm text-slate-500 mt-2">
-                Загруженные документы
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Документы</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold">{isLoading ? "…" : stats?.documents}</p>
+                <p className="mt-2 text-sm text-slate-500">Загруженные отчёты</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Задачи</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">2</p>
-              <p className="text-sm text-slate-500 mt-2">
-                Активные задачи
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Задачи</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold">{isLoading ? "…" : stats?.tasks}</p>
+                <p className="mt-2 text-sm text-slate-500">Задачи текущей недели</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Card className="mt-8">
           <CardHeader>
@@ -75,8 +76,7 @@ export default function StudentPage() {
           </CardHeader>
           <CardContent>
             <p className="text-slate-600">
-              Здесь будут отображаться ваши заявки на практику,
-              документы, задачи и уведомления.
+              Здесь будут отображаться ваши заявки на практику, документы, задачи и уведомления.
             </p>
           </CardContent>
         </Card>
