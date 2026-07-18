@@ -166,6 +166,21 @@ export default function Sidebar() {
             </Link>
 
             <Link
+              href="/student/assignments"
+              className="
+                flex items-center gap-3
+                rounded-xl
+                px-4 py-3
+                hover:bg-slate-700
+                transition-all
+                duration-200
+              "
+            >
+              <ClipboardList size={20} />
+              Тестовые задания
+            </Link>
+
+            <Link
               href="/student/documents"
               className="
                 flex items-center gap-3

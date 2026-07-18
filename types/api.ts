@@ -44,6 +44,22 @@ export type Cohort = {
   updatedAt: string;
 };
 
+export type CohortAssignment = {
+  id: string;
+  cohortId: string;
+  title: string;
+  description: string | null;
+  content: string;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpsertCohortAssignmentInput = Pick<
+  CohortAssignment,
+  "title" | "description" | "content" | "isPublished"
+>;
+
 export type CohortFormFieldOption = {
   id: string;
   label: string;
