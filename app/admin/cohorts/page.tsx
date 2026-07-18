@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import CohortDateTimeFields from "@/components/admin/cohort-date-time-fields";
 import CohortApplicationFormDialog from "@/components/admin/cohort-application-form-dialog";
+import CohortAssignmentDialog from "@/components/admin/cohort-assignment-dialog";
 import CohortTracksDialog from "@/components/admin/cohort-tracks-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
@@ -85,6 +86,7 @@ export default function CohortsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingCohort, setEditingCohort] = useState<Cohort | null>(null);
   const [formEditorCohort, setFormEditorCohort] = useState<Cohort | null>(null);
+  const [assignmentEditorCohort, setAssignmentEditorCohort] = useState<Cohort | null>(null);
   const [tracksEditorCohort, setTracksEditorCohort] = useState<Cohort | null>(null);
   const [changingStatusId, setChangingStatusId] = useState<string | null>(null);
   const [copiedCohortId, setCopiedCohortId] = useState<string | null>(null);
@@ -376,6 +378,13 @@ export default function CohortsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => setAssignmentEditorCohort(cohort)}
+                            >
+                              Тестовое задание
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => void copyPublicLink(cohort)}
                             >
                               {copiedCohortId === cohort.id
@@ -549,6 +558,13 @@ export default function CohortsPage() {
           <CohortTracksDialog
             cohort={tracksEditorCohort}
             onClose={() => setTracksEditorCohort(null)}
+          />
+        )}
+
+        {assignmentEditorCohort && (
+          <CohortAssignmentDialog
+            cohort={assignmentEditorCohort}
+            onClose={() => setAssignmentEditorCohort(null)}
           />
         )}
       </DashboardLayout>
