@@ -238,7 +238,9 @@ export default function AdminTasksPage() {
                   <Label>Поток практики</Label>
                   <Select value={selectedCohortId} onValueChange={changeCohort}>
                     <SelectTrigger className="w-full sm:w-80">
-                      <SelectValue placeholder="Выберите поток" />
+                      <SelectValue placeholder="Выберите поток">
+                        {selectedCohort.title}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {cohorts.map((cohort) => (

@@ -323,7 +323,9 @@ export default function StudentTasksPage() {
                   <Label>Поток практики</Label>
                   <Select value={selectedApplicationId} onValueChange={changeApplication}>
                     <SelectTrigger className="w-full sm:w-80">
-                      <SelectValue placeholder="Выберите поток" />
+                      <SelectValue placeholder="Выберите поток">
+                        {selectedCohort.title}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {applications.map((application) => (
