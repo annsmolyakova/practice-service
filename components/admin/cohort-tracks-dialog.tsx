@@ -20,10 +20,21 @@ type CohortTracksDialogProps = {
   onClose: () => void;
 };
 
+function getSubmitLabel(isEditing: boolean, isSaving: boolean) {
+  if (isSaving) {
+    return isEditing ? "Сохранение..." : "Создание...";
+  }
+
+  return isEditing ? "Сохранить" : "Создать трек";
+}
+
 export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDialogProps) {
   const [tracks, setTracks] = useState<CohortTrack[]>([]);
+  const [editingTrack, setEditingTrack] = useState<CohortTrack | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [sortOrder, setSortOrder] = useState("0");
+  const [isActive, setIsActive] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -63,7 +74,25 @@ export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDial
     setReloadKey((current) => current + 1);
   }
 
-  async function createTrack(event: FormEvent<HTMLFormElement>) {
+  function resetForm() {
+    setEditingTrack(null);
+    setTitle("");
+    setDescription("");
+    setSortOrder("0");
+    setIsActive(true);
+    setFormError("");
+  }
+
+  function startEditing(track: CohortTrack) {
+    setEditingTrack(track);
+    setTitle(track.title);
+    setDescription(track.description ?? "");
+    setSortOrder(String(track.sortOrder));
+    setIsActive(track.isActive);
+    setFormError("");
+  }
+
+  async function saveTrack(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const normalizedTitle = title.trim();
@@ -84,24 +113,59 @@ export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDial
       return;
     }
 
+    const normalizedSortOrder = Number(sortOrder);
+
+    if (
+      editingTrack &&
+      (!sortOrder.trim() || !Number.isInteger(normalizedSortOrder) || normalizedSortOrder < 0)
+    ) {
+      setFormError("Порядок должен быть целым неотрицательным числом");
+      return;
+    }
+
     setIsSaving(true);
     setFormError("");
 
     try {
-      const response = await tracksApi.create(cohort.id, {
-        title: normalizedTitle,
-        ...(normalizedDescription ? { description: normalizedDescription } : {}),
-        sortOrder: tracks.length,
-        isActive: true,
-      });
+      if (editingTrack) {
+        const response = await tracksApi.update(editingTrack.id, {
+          title: normalizedTitle,
+          description: normalizedDescription || null,
+          sortOrder: normalizedSortOrder,
+          isActive,
+        });
 
-      setTracks((current) =>
-        [...current, response.track].sort((left, right) => left.sortOrder - right.sortOrder),
-      );
-      setTitle("");
-      setDescription("");
+        setTracks((current) =>
+          current
+            .map((track) => (track.id === response.track.id ? response.track : track))
+            .sort((left, right) => left.sortOrder - right.sortOrder),
+        );
+      } else {
+        const nextSortOrder = tracks.reduce(
+          (maximum, track) => Math.max(maximum, track.sortOrder + 1),
+          0,
+        );
+        const response = await tracksApi.create(cohort.id, {
+          title: normalizedTitle,
+          ...(normalizedDescription ? { description: normalizedDescription } : {}),
+          sortOrder: nextSortOrder,
+          isActive: true,
+        });
+
+        setTracks((current) =>
+          [...current, response.track].sort((left, right) => left.sortOrder - right.sortOrder),
+        );
+      }
+
+      resetForm();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Не удалось создать трек");
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : editingTrack
+            ? "Не удалось сохранить трек"
+            : "Не удалось создать трек",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -137,9 +201,20 @@ export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDial
                   <article key={track.id} className="rounded-lg border p-3">
                     <div className="flex items-center justify-between gap-3">
                       <h4 className="font-medium">{track.title}</h4>
-                      <span className="text-xs text-slate-500">
-                        {track.isActive ? "Активен" : "В архиве"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">
+                          {track.isActive ? "Активен" : "В архиве"}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isSaving}
+                          onClick={() => startEditing(track)}
+                        >
+                          Редактировать
+                        </Button>
+                      </div>
                     </div>
                     {track.description && (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
@@ -152,8 +227,10 @@ export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDial
             )}
           </section>
 
-          <form className="space-y-4 border-t pt-5" onSubmit={createTrack}>
-            <h3 className="font-medium">Новый трек</h3>
+          <form className="space-y-4 border-t pt-5" onSubmit={saveTrack}>
+            <h3 className="font-medium">
+              {editingTrack ? `Редактирование: ${editingTrack.title}` : "Новый трек"}
+            </h3>
             <div>
               <Label htmlFor="track-title">Название</Label>
               <Input
@@ -181,14 +258,52 @@ export default function CohortTracksDialog({ cohort, onClose }: CohortTracksDial
               />
             </div>
 
+            {editingTrack && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="track-sort-order">Порядок</Label>
+                  <Input
+                    id="track-sort-order"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={sortOrder}
+                    disabled={isSaving}
+                    onChange={(event) => {
+                      setSortOrder(event.target.value);
+                      setFormError("");
+                    }}
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    disabled={isSaving}
+                    onChange={(event) => {
+                      setIsActive(event.target.checked);
+                      setFormError("");
+                    }}
+                  />
+                  Активный трек
+                </label>
+              </div>
+            )}
+
             {formError && <p className="text-sm text-red-600">{formError}</p>}
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" disabled={isSaving} onClick={onClose}>
-                Закрыть
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSaving}
+                onClick={editingTrack ? resetForm : onClose}
+              >
+                {editingTrack ? "Отменить" : "Закрыть"}
               </Button>
               <Button type="submit" disabled={isSaving || isLoading || Boolean(loadError)}>
-                {isSaving ? "Создание..." : "Создать трек"}
+                {getSubmitLabel(Boolean(editingTrack), isSaving)}
               </Button>
             </div>
           </form>
