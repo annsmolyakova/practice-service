@@ -41,6 +41,7 @@ export default function AdminDocumentsPage() {
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [approvingApplicationId, setApprovingApplicationId] = useState<string | null>(null);
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
+  const selectedCohort = cohorts.find((cohort) => cohort.id === selectedCohortId);
 
   useEffect(() => {
     let isCancelled = false;
@@ -205,7 +206,9 @@ export default function AdminDocumentsPage() {
                 <SelectTrigger id="cohort-select" className="w-full">
                   <SelectValue
                     placeholder={isCohortsLoading ? "Загрузка потоков..." : "Выберите поток"}
-                  />
+                  >
+                    {selectedCohort?.title}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {cohorts.map((cohort) => (
