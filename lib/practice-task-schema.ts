@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export function isSafeArtifactLink(value: string) {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export const practiceTaskSchema = z.object({
   title: z
     .string()
@@ -14,7 +24,10 @@ export const practiceTaskSchema = z.object({
   artifactLink: z
     .string()
     .trim()
-    .refine((value) => !value || z.url().safeParse(value).success, "Введите корректную ссылку"),
+    .refine(
+      (value) => !value || isSafeArtifactLink(value),
+      "Введите ссылку, начинающуюся с http:// или https://",
+    ),
 });
 
 export type PracticeTaskFormData = z.infer<typeof practiceTaskSchema>;

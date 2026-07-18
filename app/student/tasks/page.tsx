@@ -35,6 +35,7 @@ import {
   shiftWeek,
 } from "@/lib/practice-task-calendar";
 import {
+  isSafeArtifactLink,
   practiceTaskSchema,
   type PracticeTaskFormData,
 } from "@/lib/practice-task-schema";
@@ -396,7 +397,7 @@ export default function StudentTasksPage() {
                               <p className="whitespace-pre-wrap text-sm text-slate-600">
                                 {task.description}
                               </p>
-                              {task.artifactLink && (
+                              {task.artifactLink && isSafeArtifactLink(task.artifactLink) && (
                                 <a
                                   className="block break-all text-sm text-blue-600 hover:underline"
                                   href={task.artifactLink}

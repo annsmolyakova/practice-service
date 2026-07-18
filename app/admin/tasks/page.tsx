@@ -1,38 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
-
-import {
-  getTasks,
-  saveTasks,
-} from "@/lib/task-storage";
-
-import type { Task } from "@/types/task";
-import type { Application } from "@/types/application";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-
 import {
   Select,
   SelectContent,
@@ -40,403 +14,336 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  canShiftWeek,
+  formatTaskDate,
+  formatWeekRange,
+  getInitialWeekStart,
+  getWorkWeekDates,
+  shiftWeek,
+} from "@/lib/practice-task-calendar";
+import { isSafeArtifactLink } from "@/lib/practice-task-schema";
+import { cohortsApi, tasksApi } from "@/lib/practice-api";
+import type { Cohort, PracticeTask, TaskParticipant } from "@/types/api";
 
-import { roles } from "@/constants/roles";
+async function getCohorts() {
+  const response = await cohortsApi.list(1, 100);
+
+  return [...response.items].sort(
+    (left, right) => Date.parse(right.startsAt) - Date.parse(left.startsAt),
+  );
+}
+
+function TaskCell({ task }: { task: PracticeTask | null }) {
+  if (!task) {
+    return <span className="text-slate-400">—</span>;
+  }
+
+  return (
+    <div className="min-w-44 space-y-2">
+      <p className="font-medium">{task.title}</p>
+      <p className="whitespace-pre-wrap text-sm text-slate-600">{task.description}</p>
+      {task.artifactLink && isSafeArtifactLink(task.artifactLink) && (
+        <a
+          className="block break-all text-sm text-blue-600 hover:underline"
+          href={task.artifactLink}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Открыть результат
+        </a>
+      )}
+    </div>
+  );
+}
 
 export default function AdminTasksPage() {
-  const [taskList, setTaskList] =
-    useState<Task[]>(getTasks());
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState("");
+  const [weekStart, setWeekStart] = useState("");
+  const [participants, setParticipants] = useState<TaskParticipant[]>([]);
+  const [isCohortsLoading, setIsCohortsLoading] = useState(true);
+  const [isBoardLoading, setIsBoardLoading] = useState(false);
+  const [cohortsError, setCohortsError] = useState("");
+  const [boardError, setBoardError] = useState("");
 
-  const [isOpen, setIsOpen] =
-    useState(false);
-
-  const [title, setTitle] =
-    useState("");
-
-  const [
-    description,
-    setDescription,
-  ] = useState("");
-
-  const [role, setRole] =
-    useState("");
-
-  const [
-    assignedUserId,
-    setAssignedUserId,
-  ] = useState<number | null>(
-    null
+  const selectedCohort = useMemo(
+    () => cohorts.find((cohort) => cohort.id === selectedCohortId) ?? null,
+    [cohorts, selectedCohortId],
+  );
+  const weekDates = useMemo(
+    () => (weekStart ? getWorkWeekDates(weekStart) : []),
+    [weekStart],
   );
 
-  const [
-    assignedUserName,
-    setAssignedUserName,
-  ] = useState("");
+  const loadCohorts = useCallback(async () => {
+    setIsCohortsLoading(true);
+    setCohortsError("");
 
-  const applications: Application[] =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem(
-            "applications"
-          ) || "[]"
-        )
-      : [];
+    try {
+      const items = await getCohorts();
+      const initialCohort = items.find((cohort) => cohort.isActive) ?? items[0] ?? null;
 
-  const availableStudents =
-    applications.filter(
-      (application) =>
-        application.status ===
-          "approved" &&
-        application.assignedRole ===
-          role
-    );
+      setCohorts(items);
+      setSelectedCohortId(initialCohort?.id ?? "");
+      setWeekStart(initialCohort ? getInitialWeekStart(initialCohort) : "");
+      setIsBoardLoading(Boolean(initialCohort));
+    } catch (error) {
+      setCohortsError(error instanceof Error ? error.message : "Не удалось загрузить потоки");
+    } finally {
+      setIsCohortsLoading(false);
+    }
+  }, []);
 
-  function createTask() {
-    if (
-      !title ||
-      !description ||
-      !role ||
-      !assignedUserId
-    ) {
-      alert(
-        "Заполните все поля"
-      );
+  const loadBoard = useCallback(async (cohortId: string, requestedWeekStart: string) => {
+    setIsBoardLoading(true);
+    setBoardError("");
 
+    try {
+      const response = await tasksApi.listCohortWeek(cohortId, requestedWeekStart);
+      setParticipants(response.items);
+    } catch (error) {
+      setBoardError(error instanceof Error ? error.message : "Не удалось загрузить журнал задач");
+    } finally {
+      setIsBoardLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    getCohorts()
+      .then((items) => {
+        if (isCancelled) {
+          return;
+        }
+
+        const initialCohort = items.find((cohort) => cohort.isActive) ?? items[0] ?? null;
+
+        setCohorts(items);
+        setSelectedCohortId(initialCohort?.id ?? "");
+        setWeekStart(initialCohort ? getInitialWeekStart(initialCohort) : "");
+        setIsBoardLoading(Boolean(initialCohort));
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setCohortsError(error instanceof Error ? error.message : "Не удалось загрузить потоки");
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsCohortsLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCohort || !weekStart) {
       return;
     }
 
-    const newTask: Task = {
-      id: Date.now(),
+    let isCancelled = false;
 
-      title,
-      description,
+    tasksApi
+      .listCohortWeek(selectedCohort.id, weekStart)
+      .then((response) => {
+        if (!isCancelled) {
+          setParticipants(response.items);
+          setBoardError("");
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setBoardError(
+            error instanceof Error ? error.message : "Не удалось загрузить журнал задач",
+          );
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsBoardLoading(false);
+        }
+      });
 
-      role,
-
-      assignedUserId,
-      assignedUserName,
-
-      status: "todo",
+    return () => {
+      isCancelled = true;
     };
+  }, [selectedCohort, weekStart]);
 
-    const updatedTasks = [
-      ...taskList,
-      newTask,
-    ];
+  function changeCohort(cohortId: string | null) {
+    const cohort = cohorts.find((item) => item.id === cohortId);
 
-    setTaskList(updatedTasks);
-
-    saveTasks(updatedTasks);
-
-    setTitle("");
-    setDescription("");
-    setRole("");
-    setAssignedUserId(null);
-    setAssignedUserName("");
-
-    setIsOpen(false);
+    setSelectedCohortId(cohortId ?? "");
+    setWeekStart(cohort ? getInitialWeekStart(cohort) : "");
+    setParticipants([]);
+    setBoardError("");
+    setIsBoardLoading(Boolean(cohort));
   }
 
-  function deleteTask(
-    id: number
-  ) {
-    const updatedTasks =
-      taskList.filter(
-        (task) =>
-          task.id !== id
-      );
-
-    setTaskList(updatedTasks);
-
-    saveTasks(updatedTasks);
-  }
-
-  function getStatusText(
-    status: string
-  ) {
-    switch (status) {
-      case "in_progress":
-        return "В работе";
-
-      case "done":
-        return "Выполнено";
-
-      default:
-        return "Не начато";
-    }
+  function changeWeek(direction: -1 | 1) {
+    setParticipants([]);
+    setBoardError("");
+    setIsBoardLoading(true);
+    setWeekStart((current) => shiftWeek(current, direction));
   }
 
   return (
     <ProtectedRoute allowedRole="admin">
       <DashboardLayout>
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">
-            Задачи
-          </h1>
-
-          <Button
-            onClick={() =>
-              setIsOpen(true)
-            }
-          >
-            Создать задачу
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold">Журнал задач</h1>
+          <p className="mt-2 text-slate-600">
+            Просматривайте ежедневные записи участников по рабочим неделям практики.
+          </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Список задач
-            </CardTitle>
-          </CardHeader>
+        {isCohortsLoading && <p className="text-slate-600">Загрузка потоков...</p>}
 
-          <CardContent>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3">
-                    Название
-                  </th>
-
-                  <th className="text-left py-3">
-                    Роль
-                  </th>
-
-                  <th className="text-left py-3">
-                    Исполнитель
-                  </th>
-
-                  <th className="text-left py-3">
-                    Статус
-                  </th>
-
-                  <th className="text-left py-3">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {taskList.map(
-                  (task) => (
-                    <tr
-                      key={task.id}
-                      className="border-b"
-                    >
-                      <td className="py-4">
-                        <div className="font-medium">
-                          {task.title}
-                        </div>
-
-                        <div className="text-sm text-slate-500">
-                          {
-                            task.description
-                          }
-                        </div>
-                      </td>
-
-                      <td>
-                        {task.role}
-                      </td>
-
-                      <td>
-                        {task.assignedUserName ||
-                          "-"}
-                      </td>
-
-                      <td>
-                        {getStatusText(
-                          task.status
-                        )}
-                      </td>
-
-                      <td>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            deleteTask(
-                              task.id
-                            )
-                          }
-                        >
-                          Удалить
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-
-        <Dialog
-          open={isOpen}
-          onOpenChange={setIsOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                Создание задачи
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label>
-                  Название задачи
-                </Label>
-
-                <Input
-                  value={title}
-                  onChange={(e) =>
-                    setTitle(
-                      e.target.value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Описание
-                </Label>
-
-                <Input
-                  value={
-                    description
-                  }
-                  onChange={(e) =>
-                    setDescription(
-                      e.target.value
-                    )
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>
-                  Роль
-                </Label>
-
-                <Select
-                  value={role}
-                  onValueChange={(
-                    value
-                  ) => {
-                    setRole(
-                      value ?? ""
-                    );
-
-                    setAssignedUserId(
-                      null
-                    );
-
-                    setAssignedUserName(
-                      ""
-                    );
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите роль" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {roles.map(
-                      (
-                        role
-                      ) => (
-                        <SelectItem
-                          key={
-                            role
-                          }
-                          value={
-                            role
-                          }
-                        >
-                          {
-                            role
-                          }
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>
-                  Исполнитель
-                </Label>
-
-                <Select
-                  value={
-                    assignedUserId?.toString() ||
-                    ""
-                  }
-                  onValueChange={(
-                    value
-                  ) => {
-                    const student =
-                      availableStudents.find(
-                        (
-                          application
-                        ) =>
-                          application.userId ===
-                          Number(
-                            value
-                          )
-                      );
-
-                    setAssignedUserId(
-                      Number(
-                        value
-                      )
-                    );
-
-                    setAssignedUserName(
-                      student?.fullName ||
-                        ""
-                    );
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите студента" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {availableStudents.map(
-                      (
-                        student
-                      ) => (
-                        <SelectItem
-                          key={
-                            student.userId
-                          }
-                          value={student.userId.toString()}
-                        >
-                          {
-                            student.fullName
-                          }
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={
-                  createTask
-                }
-              >
-                Создать задачу
+        {!isCohortsLoading && cohortsError && (
+          <Card>
+            <CardContent className="space-y-4 py-8 text-center">
+              <p className="text-red-600">{cohortsError}</p>
+              <Button type="button" variant="outline" onClick={loadCohorts}>
+                Повторить
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isCohortsLoading && !cohortsError && cohorts.length === 0 && (
+          <Card>
+            <CardContent className="py-10 text-center text-slate-600">
+              Потоки практики ещё не созданы.
+            </CardContent>
+          </Card>
+        )}
+
+        {!isCohortsLoading && !cohortsError && selectedCohort && (
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="flex flex-col gap-4 py-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="space-y-2">
+                  <Label>Поток практики</Label>
+                  <Select value={selectedCohortId} onValueChange={changeCohort}>
+                    <SelectTrigger className="w-full sm:w-80">
+                      <SelectValue placeholder="Выберите поток" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cohorts.map((cohort) => (
+                        <SelectItem key={cohort.id} value={cohort.id}>
+                          {cohort.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canShiftWeek(selectedCohort, weekStart, -1) || isBoardLoading}
+                    onClick={() => changeWeek(-1)}
+                  >
+                    Предыдущая
+                  </Button>
+                  <span className="min-w-56 text-center text-sm font-medium">
+                    {formatWeekRange(weekStart)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canShiftWeek(selectedCohort, weekStart, 1) || isBoardLoading}
+                    onClick={() => changeWeek(1)}
+                  >
+                    Следующая
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {isBoardLoading && <p className="text-slate-600">Загрузка журнала...</p>}
+
+            {!isBoardLoading && boardError && (
+              <Card>
+                <CardContent className="space-y-4 py-8 text-center">
+                  <p className="text-red-600">{boardError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => loadBoard(selectedCohort.id, weekStart)}
+                  >
+                    Повторить
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {!isBoardLoading && !boardError && participants.length === 0 && (
+              <Card>
+                <CardContent className="py-10 text-center text-slate-600">
+                  В этом потоке пока нет одобренных участников.
+                </CardContent>
+              </Card>
+            )}
+
+            {!isBoardLoading && !boardError && participants.length > 0 && (
+              <Card className="overflow-hidden">
+                <CardContent className="overflow-x-auto p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-52">Участник</TableHead>
+                        {weekDates.map((date) => (
+                          <TableHead key={date} className="min-w-56 capitalize">
+                            {formatTaskDate(date)}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {participants.map((participant) => {
+                        const tasksByDate = new Map(
+                          participant.tasks.map((task) => [task.date, task]),
+                        );
+
+                        return (
+                          <TableRow key={participant.userId}>
+                            <TableCell className="align-top">
+                              <p className="font-medium">
+                                {participant.fullName ?? `Студент ${participant.userId}`}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {participant.track?.title ?? "Трек не назначен"}
+                              </p>
+                            </TableCell>
+                            {weekDates.map((date) => (
+                              <TableCell key={date} className="align-top">
+                                <TaskCell task={tasksByDate.get(date) ?? null} />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );
