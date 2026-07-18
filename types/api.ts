@@ -185,6 +185,36 @@ export type UpsertPracticeReviewInput = Pick<
   | "isReady"
 >;
 
+export type PracticeTask = {
+  id: string;
+  userId: string;
+  cohortId: string;
+  date: string;
+  title: string;
+  description: string;
+  artifactLink: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TaskParticipant = {
+  userId: string;
+  fullName: string | null;
+  track: Pick<CohortTrack, "id" | "title"> | null;
+  tasks: PracticeTask[];
+};
+
+export type CreatePracticeTaskInput = Pick<
+  PracticeTask,
+  "date" | "title" | "description"
+> & {
+  artifactLink?: string | null;
+};
+
+export type UpdatePracticeTaskInput = Partial<
+  Pick<PracticeTask, "title" | "description" | "artifactLink">
+>;
+
 export type Pagination = {
   page: number;
   limit: number;

@@ -9,15 +9,19 @@ import type {
   CohortTrack,
   CreateCohortTrackInput,
   CreateCohortInput,
+  CreatePracticeTaskInput,
   DocumentKind,
   Pagination,
   PracticeApplication,
   PracticeProfile,
   PracticeReport,
   PracticeReview,
+  PracticeTask,
   PublicCohort,
+  TaskParticipant,
   UpdateCohortInput,
   UpdatePracticeProfileInput,
+  UpdatePracticeTaskInput,
   UpsertPracticeReviewInput,
 } from "@/types/api";
 
@@ -166,5 +170,36 @@ export const reviewsApi = {
     apiRequest<{ review: PracticeReview }>(`/reviews/applications/${applicationId}`, {
       method: "PUT",
       body: JSON.stringify(input),
+    }),
+};
+
+function getTaskWeekPath(path: string, weekStart: string) {
+  const searchParams = new URLSearchParams({ weekStart });
+
+  return `${path}?${searchParams.toString()}`;
+}
+
+export const tasksApi = {
+  listCohortWeek: (cohortId: string, weekStart: string) =>
+    apiRequest<{ items: TaskParticipant[] }>(
+      getTaskWeekPath(`/tasks/cohorts/${cohortId}/week`, weekStart),
+    ),
+  listMineByWeek: (cohortId: string, weekStart: string) =>
+    apiRequest<{ items: PracticeTask[] }>(
+      getTaskWeekPath(`/tasks/cohorts/${cohortId}/me`, weekStart),
+    ),
+  createMine: (cohortId: string, input: CreatePracticeTaskInput) =>
+    apiRequest<{ task: PracticeTask }>(`/tasks/cohorts/${cohortId}`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  updateMine: (taskId: string, input: UpdatePracticeTaskInput) =>
+    apiRequest<{ task: PracticeTask }>(`/tasks/${taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  deleteMine: (taskId: string) =>
+    apiRequest<void>(`/tasks/${taskId}`, {
+      method: "DELETE",
     }),
 };
