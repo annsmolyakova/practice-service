@@ -3,6 +3,7 @@ import type {
   ApplicationAnswerInput,
   AuthSession,
   Cohort,
+  CohortAssignment,
   CohortDocumentSummaryItem,
   CohortFormField,
   CohortFormFieldInput,
@@ -22,6 +23,7 @@ import type {
   UpdateCohortInput,
   UpdatePracticeProfileInput,
   UpdatePracticeTaskInput,
+  UpsertCohortAssignmentInput,
   UpsertPracticeReviewInput,
 } from "@/types/api";
 
@@ -89,6 +91,22 @@ export const cohortsApi = {
     apiRequest<{ cohort: PublicCohort }>(`/cohorts/public/${publicSlug}`, {
       authenticated: false,
     }),
+};
+
+export const assignmentsApi = {
+  getByCohort: (cohortId: string) =>
+    apiRequest<{ assignment: CohortAssignment | null }>(
+      `/assignments/cohorts/${cohortId}`,
+    ),
+  upsertByCohort: (cohortId: string, input: UpsertCohortAssignmentInput) =>
+    apiRequest<{ assignment: CohortAssignment }>(`/assignments/cohorts/${cohortId}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  getMineByCohort: (cohortId: string) =>
+    apiRequest<{ assignment: CohortAssignment }>(
+      `/assignments/cohorts/${cohortId}/me`,
+    ),
 };
 
 export const applicationsApi = {

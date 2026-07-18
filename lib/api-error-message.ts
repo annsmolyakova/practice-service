@@ -6,7 +6,7 @@ const API_ERROR_MESSAGES: Record<string, string> = {
   "Application period is closed": "Приём заявок закрыт",
   "Application track is required": "Для заявки необходимо назначить трек",
   "Approved application is required": "Необходима одобренная заявка",
-  "Assignment not found": "Назначение не найдено",
+  "Assignment not found": "Тестовое задание не найдено",
   "Authentication is required": "Требуется авторизация",
   "Authorization header is required": "Требуется авторизация",
   "Authorization header must use Bearer token": "Некорректный формат авторизации",
