@@ -130,6 +130,10 @@ export type ApplicationAnswerInput = {
   optionId?: string;
 };
 
+export type UpdatePracticeApplicationInput = {
+  answers: ApplicationAnswerInput[];
+};
+
 export type PracticeApplication = {
   id: string;
   userId: string;

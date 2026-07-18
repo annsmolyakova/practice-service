@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ApplicationAnswerFields, {
+  buildApplicationAnswerInputs,
+  createApplicationAnswerMap,
+  validateApplicationAnswers,
+  type ApplicationAnswerMap,
+  type ApplicationValidationErrors,
+} from "@/components/applications/application-answer-fields";
 import { createAuthHref } from "@/lib/auth-return";
 import { getAuthSession } from "@/lib/auth-session";
 import { applicationsApi, cohortsApi } from "@/lib/practice-api";
@@ -23,21 +21,14 @@ type PublicApplicationFormProps = {
   publicSlug: string;
 };
 
-type AnswerMap = Record<string, ApplicationAnswerInput>;
-type ValidationErrors = Record<string, string>;
-
 function getDraftKey(publicSlug: string) {
   return `applicationDraft:${publicSlug}`;
 }
 
-function answersToMap(answers: ApplicationAnswerInput[]): AnswerMap {
-  return Object.fromEntries(answers.map((answer) => [answer.fieldId, answer]));
-}
-
-function readDraft(publicSlug: string): AnswerMap {
+function readDraft(publicSlug: string): ApplicationAnswerMap {
   try {
     const value = sessionStorage.getItem(getDraftKey(publicSlug));
-    return value ? (JSON.parse(value) as AnswerMap) : {};
+    return value ? (JSON.parse(value) as ApplicationAnswerMap) : {};
   } catch {
     sessionStorage.removeItem(getDraftKey(publicSlug));
     return {};
@@ -54,8 +45,8 @@ function formatDateTime(value: string) {
 export default function PublicApplicationForm({ publicSlug }: PublicApplicationFormProps) {
   const router = useRouter();
   const [cohort, setCohort] = useState<PublicCohort | null>(null);
-  const [answers, setAnswers] = useState<AnswerMap>({});
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [answers, setAnswers] = useState<ApplicationAnswerMap>({});
+  const [validationErrors, setValidationErrors] = useState<ApplicationValidationErrors>({});
   const [loadError, setLoadError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -71,12 +62,12 @@ export default function PublicApplicationForm({ publicSlug }: PublicApplicationF
       try {
         const { cohort: loadedCohort } = await cohortsApi.getPublic(publicSlug);
         const session = getAuthSession();
-        let autofill: AnswerMap = {};
+        let autofill: ApplicationAnswerMap = {};
 
         if (session?.user.role === "student") {
           try {
             const response = await applicationsApi.getAutofill(loadedCohort.id);
-            autofill = answersToMap(response.answers);
+            autofill = createApplicationAnswerMap(response.answers);
           } catch {
             // Autofill is optional and must not block a new application.
           }
@@ -109,38 +100,16 @@ export default function PublicApplicationForm({ publicSlug }: PublicApplicationF
     [cohort],
   );
 
-  function updateTextAnswer(fieldId: string, value: string) {
+  function updateAnswer(fieldId: string, answer: ApplicationAnswerInput) {
     setAnswers((current) => ({
       ...current,
-      [fieldId]: { fieldId, value },
-    }));
-    setValidationErrors((current) => ({ ...current, [fieldId]: "" }));
-  }
-
-  function updateSelectAnswer(fieldId: string, optionId: string) {
-    setAnswers((current) => ({
-      ...current,
-      [fieldId]: { fieldId, optionId },
+      [fieldId]: answer,
     }));
     setValidationErrors((current) => ({ ...current, [fieldId]: "" }));
   }
 
   function validate() {
-    const errors: ValidationErrors = {};
-
-    for (const field of fields) {
-      if (!field.isRequired) {
-        continue;
-      }
-
-      const answer = answers[field.id];
-      const isEmpty =
-        field.type === "text" ? !answer?.value?.trim() : !answer?.optionId;
-
-      if (isEmpty) {
-        errors[field.id] = "Обязательное поле";
-      }
-    }
+    const errors = validateApplicationAnswers(fields, answers);
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -167,20 +136,7 @@ export default function PublicApplicationForm({ publicSlug }: PublicApplicationF
       return;
     }
 
-    const applicationAnswers = fields.flatMap<ApplicationAnswerInput>((field) => {
-      const answer = answers[field.id];
-
-      if (!answer) {
-        return [];
-      }
-
-      if (field.type === "text") {
-        const value = answer.value?.trim();
-        return value ? [{ fieldId: field.id, value }] : [];
-      }
-
-      return answer.optionId ? [{ fieldId: field.id, optionId: answer.optionId }] : [];
-    });
+    const applicationAnswers = buildApplicationAnswerInputs(fields, answers);
 
     setIsSubmitting(true);
 
@@ -234,45 +190,12 @@ export default function PublicApplicationForm({ publicSlug }: PublicApplicationF
               <p className="text-slate-600">Дополнительные данные не требуются.</p>
             )}
 
-            {fields.map((field) => (
-              <div key={field.id} className="space-y-2">
-                <Label htmlFor={field.id}>
-                  {field.label}
-                  {field.isRequired && <span className="text-red-600"> *</span>}
-                </Label>
-
-                {field.type === "text" ? (
-                  <Input
-                    id={field.id}
-                    value={answers[field.id]?.value ?? ""}
-                    aria-invalid={Boolean(validationErrors[field.id])}
-                    onChange={(event) => updateTextAnswer(field.id, event.target.value)}
-                  />
-                ) : (
-                  <Select
-                    value={answers[field.id]?.optionId ?? ""}
-                    onValueChange={(value) => updateSelectAnswer(field.id, value ?? "")}
-                  >
-                    <SelectTrigger id={field.id} aria-invalid={Boolean(validationErrors[field.id])}>
-                      <SelectValue placeholder="Выберите вариант" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...field.options]
-                        .sort((a, b) => a.sortOrder - b.sortOrder)
-                        .map((option) => (
-                          <SelectItem key={option.id} value={option.id}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {validationErrors[field.id] && (
-                  <p className="text-sm text-red-600">{validationErrors[field.id]}</p>
-                )}
-              </div>
-            ))}
+            <ApplicationAnswerFields
+              fields={fields}
+              answers={answers}
+              validationErrors={validationErrors}
+              onAnswerChange={updateAnswer}
+            />
 
             {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
