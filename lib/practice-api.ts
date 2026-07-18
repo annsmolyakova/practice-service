@@ -21,6 +21,7 @@ import type {
   PublicCohort,
   TaskParticipant,
   UpdateCohortInput,
+  UpdateCohortTrackInput,
   UpdatePracticeApplicationInput,
   UpdatePracticeProfileInput,
   UpdatePracticeTaskInput,
@@ -147,6 +148,11 @@ export const tracksApi = {
   create: (cohortId: string, input: CreateCohortTrackInput) =>
     apiRequest<{ track: CohortTrack }>(`/tracks/cohorts/${cohortId}`, {
       method: "POST",
+      body: JSON.stringify(input),
+    }),
+  update: (id: string, input: UpdateCohortTrackInput) =>
+    apiRequest<{ track: CohortTrack }>(`/tracks/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(input),
     }),
 };

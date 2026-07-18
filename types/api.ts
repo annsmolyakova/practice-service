@@ -114,6 +114,10 @@ export type CreateCohortTrackInput = {
   isActive?: boolean;
 };
 
+export type UpdateCohortTrackInput = Partial<
+  Pick<CohortTrack, "title" | "description" | "sortOrder" | "isActive">
+>;
+
 export type ApplicationAnswer = {
   id: string;
   applicationId: string;
