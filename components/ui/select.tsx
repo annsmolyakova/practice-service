@@ -6,7 +6,72 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+function areValuesEqual<Value>(
+  currentValue: Value | Value[] | null,
+  nextValue: Value | Value[] | null,
+  multiple: boolean,
+  isItemEqualToValue: (itemValue: Value, value: Value) => boolean
+) {
+  if (Object.is(currentValue, nextValue)) {
+    return true
+  }
+
+  if (currentValue === null || nextValue === null) {
+    return false
+  }
+
+  if (multiple) {
+    if (!Array.isArray(currentValue) || !Array.isArray(nextValue)) {
+      return false
+    }
+
+    return (
+      currentValue.length === nextValue.length &&
+      currentValue.every((value, index) =>
+        isItemEqualToValue(value, nextValue[index])
+      )
+    )
+  }
+
+  return isItemEqualToValue(currentValue as Value, nextValue as Value)
+}
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  value,
+  multiple,
+  isItemEqualToValue = Object.is,
+  onValueChange,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const handleValueChange: NonNullable<typeof onValueChange> = (
+    nextValue,
+    eventDetails
+  ) => {
+    if (
+      value !== undefined &&
+      areValuesEqual(
+        value,
+        nextValue,
+        Boolean(multiple),
+        isItemEqualToValue
+      )
+    ) {
+      return
+    }
+
+    onValueChange?.(nextValue, eventDetails)
+  }
+
+  return (
+    <SelectPrimitive.Root
+      value={value}
+      multiple={multiple}
+      isItemEqualToValue={isItemEqualToValue}
+      onValueChange={handleValueChange}
+      {...props}
+    />
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
