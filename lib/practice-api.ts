@@ -21,6 +21,7 @@ import type {
   PublicCohort,
   TaskParticipant,
   UpdateCohortInput,
+  UpdatePracticeApplicationInput,
   UpdatePracticeProfileInput,
   UpdatePracticeTaskInput,
   UpsertCohortAssignmentInput,
@@ -120,6 +121,11 @@ export const applicationsApi = {
     apiRequest<{ application: PracticeApplication }>("/applications", {
       method: "POST",
       body: JSON.stringify({ cohortId, answers }),
+    }),
+  update: (id: string, input: UpdatePracticeApplicationInput) =>
+    apiRequest<{ application: PracticeApplication }>(`/applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
     }),
   updateStatus: (
     id: string,

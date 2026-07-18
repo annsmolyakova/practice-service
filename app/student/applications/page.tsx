@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import EditApplicationDialog from "@/components/applications/edit-application-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export default function StudentApplicationsPage() {
   const [applications, setApplications] = useState<PracticeApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [editingApplication, setEditingApplication] = useState<PracticeApplication | null>(null);
 
   const loadApplications = useCallback(async () => {
     setIsLoading(true);
@@ -80,6 +82,15 @@ export default function StudentApplicationsPage() {
       isCancelled = true;
     };
   }, []);
+
+  function handleApplicationUpdated(updatedApplication: PracticeApplication) {
+    setApplications((current) =>
+      current.map((application) =>
+        application.id === updatedApplication.id ? updatedApplication : application,
+      ),
+    );
+    setEditingApplication(null);
+  }
 
   return (
     <ProtectedRoute allowedRole="student">
@@ -153,10 +164,30 @@ export default function StudentApplicationsPage() {
                   <p className="text-sm text-slate-500">
                     Последнее обновление: {formatDateTime(application.updatedAt)}
                   </p>
+
+                  {application.status === "pending" && (
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditingApplication(application)}
+                      >
+                        Редактировать
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
+        )}
+
+        {editingApplication && (
+          <EditApplicationDialog
+            application={editingApplication}
+            onClose={() => setEditingApplication(null)}
+            onUpdated={handleApplicationUpdated}
+          />
         )}
       </DashboardLayout>
     </ProtectedRoute>
