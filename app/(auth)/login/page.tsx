@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/components/auth/auth-provider";
 import { loginSchema, LoginFormData } from "@/lib/login-schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveAuthSession } from "@/lib/auth-session";
 import { authApi } from "@/lib/practice-api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -26,6 +26,7 @@ export default function LoginPage() {
   });
 
   const router = useRouter();
+  const { setSession } = useAuth();
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const returnTo = useApplicationReturnTo();
@@ -35,7 +36,7 @@ export default function LoginPage() {
 
     try {
       const session = await authApi.login(data.email, data.password);
-      saveAuthSession(session);
+      setSession(session);
       router.push(
         session.user.role === "admin" ? "/admin" : returnTo ?? "/student",
       );

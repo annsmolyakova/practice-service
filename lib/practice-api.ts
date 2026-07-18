@@ -27,9 +27,11 @@ import type {
   UpdatePracticeTaskInput,
   UpsertCohortAssignmentInput,
   UpsertPracticeReviewInput,
+  User,
 } from "@/types/api";
 
 export const authApi = {
+  getMe: () => apiRequest<{ user: User }>("/auth/me"),
   login: (email: string, password: string) =>
     apiRequest<AuthSession>("/auth/login", {
       method: "POST",

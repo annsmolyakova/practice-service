@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import {
   registerSchema,
   RegisterFormData,
 } from "@/lib/register-schema";
-import { saveAuthSession } from "@/lib/auth-session";
 import { authApi } from "@/lib/practice-api";
 
 import {
@@ -29,6 +29,7 @@ import { useApplicationReturnTo } from "@/hooks/useApplicationReturnTo";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { setSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [registerError, setRegisterError] = useState("");
   const returnTo = useApplicationReturnTo();
@@ -51,7 +52,7 @@ export default function RegisterPage() {
 
     try {
       const session = await authApi.register(data.email, data.password);
-      saveAuthSession(session);
+      setSession(session);
       router.push(returnTo ?? "/student");
     } catch (error) {
       setRegisterError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");

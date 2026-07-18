@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -14,15 +16,15 @@ export default function ProtectedRoute({
   allowedRole,
 }: ProtectedRouteProps) {
   const router = useRouter();
-  const user = useCurrentUser();
+  const { status, user, error, retry } = useAuth();
   const isAuthorized = user?.role === allowedRole;
 
   useEffect(() => {
-    if (user === undefined) {
+    if (status === "loading" || status === "error") {
       return;
     }
 
-    if (!user) {
+    if (status === "unauthenticated" || !user) {
       router.push("/login");
       return;
     }
@@ -36,9 +38,22 @@ export default function ProtectedRoute({
 
       return;
     }
-  }, [allowedRole, router, user]);
+  }, [allowedRole, router, status, user]);
 
-  if (!isAuthorized) {
+  if (status === "error") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+        <div className="space-y-4 text-center">
+          <p className="text-red-600">{error}</p>
+          <Button type="button" variant="outline" onClick={retry}>
+            Повторить
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status !== "authenticated" || !isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Загрузка...
