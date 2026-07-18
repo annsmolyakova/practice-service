@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,14 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   canShiftWeek,
   formatTaskDate,
@@ -48,9 +40,11 @@ function TaskCell({ task }: { task: PracticeTask | null }) {
   }
 
   return (
-    <div className="min-w-44 space-y-2">
-      <p className="font-medium">{task.title}</p>
-      <p className="whitespace-pre-wrap text-sm text-slate-600">{task.description}</p>
+    <div className="min-w-0 space-y-2">
+      <p className="break-words font-medium">{task.title}</p>
+      <p className="whitespace-pre-wrap break-words text-sm text-slate-600">
+        {task.description}
+      </p>
       {task.artifactLink && isSafeArtifactLink(task.artifactLink) && (
         <a
           className="block break-all text-sm text-blue-600 hover:underline"
@@ -302,47 +296,38 @@ export default function AdminTasksPage() {
             )}
 
             {!isBoardLoading && !boardError && participants.length > 0 && (
-              <Card className="overflow-hidden">
-                <CardContent className="overflow-x-auto p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-52">Участник</TableHead>
-                        {weekDates.map((date) => (
-                          <TableHead key={date} className="min-w-56 capitalize">
-                            {formatTaskDate(date)}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {participants.map((participant) => {
-                        const tasksByDate = new Map(
-                          participant.tasks.map((task) => [task.date, task]),
-                        );
+              <div className="space-y-5">
+                {participants.map((participant) => {
+                  const tasksByDate = new Map(
+                    participant.tasks.map((task) => [task.date, task]),
+                  );
 
-                        return (
-                          <TableRow key={participant.userId}>
-                            <TableCell className="align-top">
-                              <p className="font-medium">
-                                {participant.fullName ?? `Студент ${participant.userId}`}
-                              </p>
-                              <p className="mt-1 text-sm text-slate-500">
-                                {participant.track?.title ?? "Трек не назначен"}
-                              </p>
-                            </TableCell>
-                            {weekDates.map((date) => (
-                              <TableCell key={date} className="align-top">
-                                <TaskCell task={tasksByDate.get(date) ?? null} />
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                  return (
+                    <Card key={participant.userId} className="min-w-0">
+                      <CardHeader>
+                        <CardTitle className="break-words text-lg">
+                          {participant.fullName ?? `Студент ${participant.userId}`}
+                        </CardTitle>
+                        <p className="text-sm text-slate-500">
+                          {participant.track?.title ?? "Трек не назначен"}
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                          {weekDates.map((date) => (
+                            <section key={date} className="min-w-0 rounded-lg border p-3">
+                              <h2 className="mb-3 text-sm font-medium capitalize">
+                                {formatTaskDate(date)}
+                              </h2>
+                              <TaskCell task={tasksByDate.get(date) ?? null} />
+                            </section>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
