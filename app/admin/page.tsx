@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
 import { Button } from "@/components/ui/button";
@@ -11,16 +8,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { getAdminDashboardStats } from "@/lib/dashboard-statistics";
 
 export default function AdminPage() {
-  const router = useRouter();
   const { stats, isLoading, loadError, reload } = useDashboardStats(getAdminDashboardStats);
-
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-
-    if (!user) {
-      router.replace("/login");
-    }
-  }, [router]);
 
   return (
     <ProtectedRoute allowedRole="admin">

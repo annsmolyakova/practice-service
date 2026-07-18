@@ -1,23 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session";
 import { authApi } from "@/lib/practice-api";
-import type { User } from "@/types/api";
 
 export default function Header() {
   const router = useRouter();
-
-  const [user] = useState<User | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return getAuthSession()?.user ?? null;
-  });
+  const user = useCurrentUser();
 
   async function handleLogout() {
     const session = getAuthSession();

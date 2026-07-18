@@ -35,7 +35,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return data as T;
 }
 
-async function refreshSession(): Promise<AuthSession | null> {
+export async function refreshAuthSession(): Promise<AuthSession | null> {
   const session = getAuthSession();
 
   if (!session?.refreshToken) {
@@ -101,7 +101,7 @@ async function authenticatedFetch(
   }
 
   if (authenticated && response.status === 401 && retryOnUnauthorized) {
-    const refreshedSession = await refreshSession();
+    const refreshedSession = await refreshAuthSession();
 
     if (refreshedSession) {
       return authenticatedFetch(path, {

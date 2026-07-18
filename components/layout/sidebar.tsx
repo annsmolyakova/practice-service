@@ -11,17 +11,11 @@ import {
   LayoutDashboard,
   UserRound,
 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function Sidebar() {
-  const user =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem("user") || "{}"
-        )
-      : null;
-
-  const isAdmin =
-    user?.role === "admin";
+  const user = useCurrentUser();
+  const isAdmin = user?.role === "admin";
 
   return (
     <aside
