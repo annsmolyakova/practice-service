@@ -2,6 +2,8 @@ import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-se
 import { getApiErrorMessage } from "@/lib/api-error-message";
 import type { AuthSession } from "@/types/api";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 type ApiRequestOptions = RequestInit & {
   authenticated?: boolean;
   retryOnUnauthorized?: boolean;
@@ -22,14 +24,23 @@ async function parseResponse<T>(response: Response): Promise<T> {
     return undefined as T;
   }
 
-  const data = (await response.json().catch(() => null)) as T | { message?: string } | null;
+  const data = (await response.json().catch(() => null)) as
+    | T
+    | { message?: string }
+    | null;
 
   if (!response.ok) {
-    const serverMessage = typeof data === "object" && data !== null && "message" in data
-      ? data.message
-      : undefined;
+    const serverMessage =
+      typeof data === "object" &&
+      data !== null &&
+      "message" in data
+        ? data.message
+        : undefined;
 
-    throw new ApiError(getApiErrorMessage(serverMessage, response.status), response.status);
+    throw new ApiError(
+      getApiErrorMessage(serverMessage, response.status),
+      response.status,
+    );
   }
 
   return data as T;
@@ -45,10 +56,14 @@ export async function refreshAuthSession(): Promise<AuthSession | null> {
   let response: Response;
 
   try {
-    response = await fetch("/api/auth/refresh", {
+    response = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refreshToken: session.refreshToken,
+      }),
     });
   } catch {
     throw new ApiError("Не удалось связаться с сервером", 0);
@@ -60,7 +75,9 @@ export async function refreshAuthSession(): Promise<AuthSession | null> {
   }
 
   const refreshedSession = (await response.json()) as AuthSession;
+
   saveAuthSession(refreshedSession);
+
   return refreshedSession;
 }
 
@@ -74,7 +91,9 @@ async function authenticatedFetch(
     headers,
     ...requestOptions
   } = options;
+
   const session = getAuthSession();
+
   const requestHeaders = new Headers(headers);
 
   if (
@@ -86,13 +105,16 @@ async function authenticatedFetch(
   }
 
   if (authenticated && session?.accessToken) {
-    requestHeaders.set("Authorization", `Bearer ${session.accessToken}`);
+    requestHeaders.set(
+      "Authorization",
+      `Bearer ${session.accessToken}`,
+    );
   }
 
   let response: Response;
 
   try {
-    response = await fetch(`/api${path}`, {
+    response = await fetch(`${API_URL}${path}`, {
       ...requestOptions,
       headers: requestHeaders,
     });
@@ -100,7 +122,11 @@ async function authenticatedFetch(
     throw new ApiError("Не удалось связаться с сервером", 0);
   }
 
-  if (authenticated && response.status === 401 && retryOnUnauthorized) {
+  if (
+    authenticated &&
+    response.status === 401 &&
+    retryOnUnauthorized
+  ) {
     const refreshedSession = await refreshAuthSession();
 
     if (refreshedSession) {
@@ -128,10 +154,22 @@ export type ApiFile = {
   fileName: string;
 };
 
-function getResponseFileName(response: Response, fallbackFileName: string) {
-  const contentDisposition = response.headers.get("Content-Disposition");
-  const encodedFileName = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
-  const quotedFileName = contentDisposition?.match(/filename="([^"]+)"/i)?.[1];
+function getResponseFileName(
+  response: Response,
+  fallbackFileName: string,
+) {
+  const contentDisposition =
+    response.headers.get("Content-Disposition");
+
+  const encodedFileName =
+    contentDisposition?.match(
+      /filename\*=UTF-8''([^;]+)/i,
+    )?.[1];
+
+  const quotedFileName =
+    contentDisposition?.match(
+      /filename="([^"]+)"/i,
+    )?.[1];
 
   if (encodedFileName) {
     return decodeURIComponent(encodedFileName);
@@ -153,6 +191,9 @@ export async function apiFileRequest(
 
   return {
     blob: await response.blob(),
-    fileName: getResponseFileName(response, fallbackFileName),
+    fileName: getResponseFileName(
+      response,
+      fallbackFileName,
+    ),
   };
 }
