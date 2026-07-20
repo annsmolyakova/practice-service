@@ -1,0 +1,11 @@
+.dockerignore
+Dockerfile
+.git
+.gitignore
+.next
+node_modules
+npm-debug.log*
+.env*
+.DS_Store
+.idea
+README.md
