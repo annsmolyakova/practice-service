@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Docker
+
+Build the production image:
+
+```bash
+docker build -t practice-service .
+```
+
+Run the container and pass the backend URL at runtime:
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e BACKEND_URL=http://host.docker.internal:8080 \
+  practice-service
+```
+
+The application is available at [http://localhost:3000](http://localhost:3000).
+Requests to `/api/*` are forwarded to `BACKEND_URL`; the `/api` prefix is removed.
