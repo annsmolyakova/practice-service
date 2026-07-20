@@ -2,7 +2,7 @@ import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-se
 import { getApiErrorMessage } from "@/lib/api-error-message";
 import type { AuthSession } from "@/types/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "/api";
 
 type ApiRequestOptions = RequestInit & {
   authenticated?: boolean;
