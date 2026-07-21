@@ -30,14 +30,13 @@ import { useApplicationReturnTo } from "@/hooks/useApplicationReturnTo";
 export default function RegisterPage() {
   const router = useRouter();
   const { setSession } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [registerError, setRegisterError] = useState("");
-  const returnTo = useApplicationReturnTo();
 
-  const [
-    showConfirmPassword,
-    setShowConfirmPassword,
-  ] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+  const [registerError, setRegisterError] = useState("");
+
+  const returnTo = useApplicationReturnTo();
 
   const {
     register,
@@ -51,29 +50,43 @@ export default function RegisterPage() {
     setRegisterError("");
 
     try {
-      const session = await authApi.register(data.email, data.password);
+      const session = await authApi.register(
+        data.email,
+        data.password,
+      );
+
       setSession(session);
+
       router.push(returnTo ?? "/student");
     } catch (error) {
-      setRegisterError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");
+      setRegisterError(
+        error instanceof Error
+          ? error.message
+          : "Не удалось зарегистрироваться",
+      );
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100">
-      <Card className="w-[450px]">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-4 py-8 sm:px-6">
+      <Card className="w-full max-w-md rounded-3xl border-white/60 bg-white/90 shadow-2xl backdrop-blur-xl">
+        <CardHeader className="px-6 pt-8 sm:px-8 sm:pt-10">
+          <CardTitle className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Регистрация
           </CardTitle>
+
+          <p className="mt-2 text-center text-sm text-slate-500">
+            Создайте аккаунт, чтобы начать работу с сервисом
+          </p>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-6 pb-8 sm:px-8 sm:pb-10">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5"
           >
-            <div>
+            {/* Email */}
+            <div className="space-y-2">
               <Label htmlFor="email">
                 Email
               </Label>
@@ -82,17 +95,19 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 placeholder="Введите email"
+                className="h-11 rounded-xl"
                 {...register("email")}
               />
 
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-sm text-red-500">
                   {errors.email.message}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* Пароль */}
+            <div className="space-y-2">
               <Label htmlFor="password">
                 Пароль
               </Label>
@@ -100,8 +115,13 @@ export default function RegisterPage() {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
                   placeholder="Введите пароль"
+                  className="h-11 rounded-xl pr-11"
                   {...register("password")}
                 />
 
@@ -110,7 +130,12 @@ export default function RegisterPage() {
                   onClick={() =>
                     setShowPassword(!showPassword)
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-slate-500 transition-colors hover:text-slate-900"
+                  aria-label={
+                    showPassword
+                      ? "Скрыть пароль"
+                      : "Показать пароль"
+                  }
                 >
                   {showPassword ? (
                     <EyeOff size={18} />
@@ -121,13 +146,14 @@ export default function RegisterPage() {
               </div>
 
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-sm text-red-500">
                   {errors.password.message}
                 </p>
               )}
             </div>
 
-            <div>
+            {/* Подтверждение пароля */}
+            <div className="space-y-2">
               <Label htmlFor="confirmPassword">
                 Повторите пароль
               </Label>
@@ -141,6 +167,7 @@ export default function RegisterPage() {
                       : "password"
                   }
                   placeholder="Повторите пароль"
+                  className="h-11 rounded-xl pr-11"
                   {...register("confirmPassword")}
                 />
 
@@ -148,10 +175,15 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() =>
                     setShowConfirmPassword(
-                      !showConfirmPassword
+                      !showConfirmPassword,
                     )
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-slate-500 transition-colors hover:text-slate-900"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Скрыть пароль"
+                      : "Показать пароль"
+                  }
                 >
                   {showConfirmPassword ? (
                     <EyeOff size={18} />
@@ -162,31 +194,36 @@ export default function RegisterPage() {
               </div>
 
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-sm text-red-500">
                   {errors.confirmPassword.message}
                 </p>
               )}
             </div>
 
+            {/* Ошибка регистрации */}
             {registerError && (
-              <p className="text-center text-red-500 text-sm">
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-center text-sm text-red-600">
                 {registerError}
-              </p>
+              </div>
             )}
 
+            {/* Кнопка */}
             <Button
               type="submit"
-              className="w-full"
+              className="h-11 w-full rounded-xl bg-blue-600 font-medium shadow-md transition-all hover:bg-blue-700 hover:shadow-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+              {isSubmitting
+                ? "Регистрация..."
+                : "Зарегистрироваться"}
             </Button>
 
-            <p className="text-center text-sm text-slate-600">
+            {/* Ссылка на вход */}
+            <p className="pt-2 text-center text-sm text-slate-600">
               Уже есть аккаунт?{" "}
               <Link
                 href={createAuthHref("/login", returnTo)}
-                className="text-blue-600 hover:underline"
+                className="font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline"
               >
                 Войти
               </Link>

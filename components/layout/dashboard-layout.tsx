@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Header from "./header";
 import Sidebar from "./sidebar";
 
@@ -8,14 +11,21 @@ type DashboardLayoutProps = {
 export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <div className="flex">
-      <Sidebar />
+    <div className="min-h-screen bg-slate-100">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
-      <div className="min-w-0 flex-1">
-        <Header />
+      <div className="min-w-0 lg:pl-72">
+        <Header
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
 
-        <main className="p-8 bg-slate-100 min-h-screen">
+        <main className="min-h-[calc(100vh-4rem)] bg-slate-100 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

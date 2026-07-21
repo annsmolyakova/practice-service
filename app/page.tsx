@@ -2,35 +2,38 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-6">
-      <div className="max-w-4xl w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-14 text-center">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 px-4 py-6 sm:px-6 sm:py-10">
+      <div className="w-full max-w-4xl rounded-3xl border border-white/50 bg-white/80 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-10 md:p-14">
 
-        <div className="mb-10">
-
-          <h1 className="text-5xl font-bold tracking-tight text-slate-900 mb-6">
+        {/* Заголовок и описание */}
+        <div className="mb-8 sm:mb-10">
+          <h1 className="mb-4 text-3xl font-bold tracking-tight text-slate-900 sm:mb-6 sm:text-4xl md:text-5xl">
             Сервис организации практики
           </h1>
 
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg md:text-xl">
             Платформа для управления практикой студентов:
             заявки, документы, задачи и сопровождение
             учебного процесса в одном месте.
           </p>
         </div>
 
-        <div className="flex justify-center gap-4">
+        {/* Кнопки */}
+        <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
           <Link
             href="/login"
             className="
-              px-8 py-4
               rounded-2xl
               bg-blue-600
-              text-white
+              px-8 py-3.5
+              text-center
               font-medium
+              text-white
               shadow-lg
+              transition-all
               hover:bg-blue-700
               hover:scale-105
-              transition-all
+              sm:py-4
             "
           >
             Войти
@@ -39,54 +42,67 @@ export default function Home() {
           <Link
             href="/register"
             className="
-              px-8 py-4
               rounded-2xl
-              bg-white
               border
               border-slate-300
-              text-slate-700
+              bg-white
+              px-8 py-3.5
+              text-center
               font-medium
+              text-slate-700
+              transition-all
               hover:bg-slate-50
               hover:scale-105
-              transition-all
+              sm:py-4
             "
           >
             Регистрация
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="text-3xl mb-2">📋</div>
-            <h3 className="font-semibold mb-2">
+        {/* Возможности сервиса */}
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 md:grid-cols-3">
+
+          {/* Заявки */}
+          <div className="rounded-2xl bg-slate-50 p-5 transition-all hover:-translate-y-1 hover:shadow-md sm:p-6">
+            <div className="mb-2 text-3xl">📋</div>
+
+            <h3 className="mb-2 font-semibold text-slate-900">
               Заявки
             </h3>
-            <p className="text-sm text-slate-500">
+
+            <p className="text-sm leading-relaxed text-slate-500">
               Подача и обработка заявок на практику.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="text-3xl mb-2">📄</div>
-            <h3 className="font-semibold mb-2">
+          {/* Документы */}
+          <div className="rounded-2xl bg-slate-50 p-5 transition-all hover:-translate-y-1 hover:shadow-md sm:p-6">
+            <div className="mb-2 text-3xl">📄</div>
+
+            <h3 className="mb-2 font-semibold text-slate-900">
               Документы
             </h3>
-            <p className="text-sm text-slate-500">
+
+            <p className="text-sm leading-relaxed text-slate-500">
               Генерация и хранение документов практики.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-50">
-            <div className="text-3xl mb-2">✅</div>
-            <h3 className="font-semibold mb-2">
+          {/* Задачи */}
+          <div className="rounded-2xl bg-slate-50 p-5 transition-all hover:-translate-y-1 hover:shadow-md sm:p-6">
+            <div className="mb-2 text-3xl">✅</div>
+
+            <h3 className="mb-2 font-semibold text-slate-900">
               Задачи
             </h3>
-            <p className="text-sm text-slate-500">
+
+            <p className="text-sm leading-relaxed text-slate-500">
               Распределение и контроль выполнения задач.
             </p>
           </div>
-        </div>
 
+        </div>
       </div>
     </main>
   );
