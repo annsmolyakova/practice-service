@@ -9,7 +9,6 @@ import {
   ClipboardList,
   FileText,
   Briefcase,
-  LayoutDashboard,
   UserRound,
 } from "lucide-react";
 
@@ -27,6 +26,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const user = useCurrentUser();
   const isAdmin = user?.role === "admin";
+  const homeHref = isAdmin ? "/admin" : "/student";
 
   return (
     <>
@@ -71,7 +71,7 @@ export default function Sidebar({
 
         <nav className="space-y-2">
           <Link
-            href="/"
+            href={homeHref}
             onClick={onClose}
             className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
           >
@@ -119,15 +119,6 @@ export default function Sidebar({
             </>
           ) : (
             <>
-              <Link
-                href="/student"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <LayoutDashboard size={20} />
-                Личный кабинет
-              </Link>
-
               <Link
                 href="/student/applications"
                 onClick={onClose}
