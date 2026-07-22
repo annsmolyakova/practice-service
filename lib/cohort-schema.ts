@@ -46,6 +46,7 @@ export const cohortSchema = z
     endsAtDate: requiredDate,
     endsAtTime: requiredTime,
     isActive: z.boolean(),
+    isPubliclyListed: z.boolean(),
   })
   .superRefine((data, context) => {
     const values = [

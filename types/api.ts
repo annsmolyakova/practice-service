@@ -40,6 +40,7 @@ export type Cohort = {
   applicationStartsAt: string;
   applicationEndsAt: string;
   isActive: boolean;
+  isPubliclyListed: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -255,6 +256,7 @@ export type CreateCohortInput = {
   applicationStartsAt: string;
   applicationEndsAt: string;
   isActive?: boolean;
+  isPubliclyListed?: boolean;
 };
 
 export type UpdateCohortInput = Partial<Omit<CreateCohortInput, "description">> & {
