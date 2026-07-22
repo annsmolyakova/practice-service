@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import EditApplicationDialog from "@/components/applications/edit-application-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import ProtectedRoute from "@/components/layout/protected-route";
+import AvailableCohortsSection from "@/components/student/available-cohorts-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { applicationsApi } from "@/lib/practice-api";
@@ -98,9 +99,13 @@ export default function StudentApplicationsPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold">Мои заявки</h1>
           <p className="mt-2 text-slate-600">
-            Новая заявка подаётся по публичной ссылке выбранной когорты.
+            Подайте новую заявку или следите за статусом уже отправленных.
           </p>
         </div>
+
+        <AvailableCohortsSection />
+
+        <h2 className="mb-4 text-2xl font-semibold">Поданные заявки</h2>
 
         {isLoading && <p className="text-slate-600">Загрузка заявок...</p>}
 
