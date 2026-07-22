@@ -44,6 +44,7 @@ const EMPTY_FORM: CohortFormData = {
   endsAtDate: "",
   endsAtTime: "",
   isActive: true,
+  isPubliclyListed: false,
 };
 
 function toDateTimeParts(value: string) {
@@ -173,6 +174,7 @@ export default function CohortsPage() {
       endsAtDate: endsAt.date,
       endsAtTime: endsAt.time,
       isActive: cohort.isActive,
+      isPubliclyListed: cohort.isPubliclyListed,
     });
     setIsOpen(true);
   }
@@ -202,6 +204,7 @@ export default function CohortsPage() {
       startsAt: combineLocalDateTime(data.startsAtDate, data.startsAtTime).toISOString(),
       endsAt: combineLocalDateTime(data.endsAtDate, data.endsAtTime).toISOString(),
       isActive: data.isActive,
+      isPubliclyListed: data.isPubliclyListed,
     };
 
     try {
@@ -349,15 +352,22 @@ export default function CohortsPage() {
                           {formatDateTime(cohort.startsAt)} — {formatDateTime(cohort.endsAt)}
                         </td>
                         <td className="pr-4">
-                          <span
-                            className={
-                              cohort.isActive
-                                ? "rounded-full bg-green-100 px-2 py-1 text-xs text-green-700"
-                                : "rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
-                            }
-                          >
-                            {cohort.isActive ? "Активна" : "В архиве"}
-                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            <span
+                              className={
+                                cohort.isActive
+                                  ? "rounded-full bg-green-100 px-2 py-1 text-xs text-green-700"
+                                  : "rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                              }
+                            >
+                              {cohort.isActive ? "Активна" : "В архиве"}
+                            </span>
+                            {cohort.isPubliclyListed && (
+                              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                                В списке для студентов
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4">
                           <div className="flex flex-wrap gap-2">
@@ -532,6 +542,15 @@ export default function CohortsPage() {
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" className="size-4" {...register("isActive")} />
                 Когорта активна
+              </label>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="size-4"
+                  {...register("isPubliclyListed")}
+                />
+                Показывать студентам в списке доступных когорт
               </label>
 
               {formError && <p className="text-sm text-red-500">{formError}</p>}

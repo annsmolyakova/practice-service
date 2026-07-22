@@ -72,6 +72,8 @@ export const cohortsApi = {
       `/cohorts?${searchParams.toString()}`,
     );
   },
+  listAvailable: () =>
+    apiRequest<{ items: Cohort[] }>("/cohorts/available"),
   get: (id: string) =>
     apiRequest<{ cohort: Cohort }>(`/cohorts/${id}`),
   create: (input: CreateCohortInput) =>
