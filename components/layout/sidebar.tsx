@@ -1,32 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import {
+  type LucideIcon,
   Home,
   Users,
   ClipboardList,
   FileText,
   Briefcase,
   UserRound,
+  X,
 } from "lucide-react";
 
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type SidebarProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
+type NavigationItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const adminNavigation: NavigationItem[] = [
+  { href: "/admin/cohorts", label: "Когорты", icon: Users },
+  { href: "/admin/applications", label: "Заявки", icon: ClipboardList },
+  { href: "/admin/documents", label: "Документы", icon: FileText },
+  { href: "/admin/tasks", label: "Задачи", icon: Briefcase },
+];
+
+const studentNavigation: NavigationItem[] = [
+  { href: "/student/applications", label: "Мои заявки", icon: ClipboardList },
+  { href: "/student/profile", label: "Профиль практики", icon: UserRound },
+  { href: "/student/assignments", label: "Тестовые задания", icon: ClipboardList },
+  { href: "/student/documents", label: "Документы", icon: FileText },
+  { href: "/student/tasks", label: "Задачи", icon: Briefcase },
+];
+
 export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
   const user = useCurrentUser();
+  const pathname = usePathname();
   const isAdmin = user?.role === "admin";
   const homeHref = isAdmin ? "/admin" : "/student";
+  const navigation = isAdmin ? adminNavigation : studentNavigation;
 
   return (
     <>
@@ -70,100 +96,26 @@ export default function Sidebar({
         </div>
 
         <nav className="space-y-2">
-          <Link
-            href={homeHref}
-            onClick={onClose}
-            className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-          >
-            <Home size={20} />
-            Главная
-          </Link>
+          {[{ href: homeHref, label: "Главная", icon: Home }, ...navigation].map(
+            ({ href, label, icon: Icon }) => {
+              const isActive = pathname === href;
 
-          {isAdmin ? (
-            <>
-              <Link
-                href="/admin/cohorts"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <Users size={20} />
-                Когорты
-              </Link>
-
-              <Link
-                href="/admin/applications"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <ClipboardList size={20} />
-                Заявки
-              </Link>
-
-              <Link
-                href="/admin/documents"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <FileText size={20} />
-                Документы
-              </Link>
-
-              <Link
-                href="/admin/tasks"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <Briefcase size={20} />
-                Задачи
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/student/applications"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <ClipboardList size={20} />
-                Мои заявки
-              </Link>
-
-              <Link
-                href="/student/profile"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <UserRound size={20} />
-                Профиль практики
-              </Link>
-
-              <Link
-                href="/student/assignments"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <ClipboardList size={20} />
-                Тестовые задания
-              </Link>
-
-              <Link
-                href="/student/documents"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <FileText size={20} />
-                Документы
-              </Link>
-
-              <Link
-                href="/student/tasks"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700"
-              >
-                <Briefcase size={20} />
-                Задачи
-              </Link>
-            </>
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onClose}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-slate-700",
+                    isActive && "bg-slate-700 shadow-sm",
+                  )}
+                >
+                  <Icon size={20} />
+                  {label}
+                </Link>
+              );
+            },
           )}
         </nav>
       </aside>
