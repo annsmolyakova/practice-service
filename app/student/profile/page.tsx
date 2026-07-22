@@ -16,17 +16,24 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   practiceProfileSchema,
   type PracticeProfileFormData,
 } from "@/lib/practice-profile-schema";
 import { profilesApi } from "@/lib/practice-api";
+import type { PracticeProfile } from "@/types/api";
 
 const EMPTY_PROFILE: PracticeProfileFormData = {
   fullName: "",
-  specialty: "",
+  fullNameGenitive: "",
+  directionCode: "",
+  directionName: "",
   educationProgram: "",
   group: "",
+  urfuPracticeSupervisor: "",
+  urfuPracticeSupervisorShortName: "",
+  mainStageWorkList: "",
 };
 
 const PROFILE_FIELDS: Array<{
@@ -42,9 +49,19 @@ const PROFILE_FIELDS: Array<{
     autoComplete: "name",
   },
   {
-    name: "specialty",
-    label: "Специальность",
-    placeholder: "09.03.04 Программная инженерия",
+    name: "fullNameGenitive",
+    label: "ФИО в родительном падеже",
+    placeholder: "Иванова Ивана Ивановича",
+  },
+  {
+    name: "directionCode",
+    label: "Код направления",
+    placeholder: "09.03.04",
+  },
+  {
+    name: "directionName",
+    label: "Наименование направления",
+    placeholder: "Программная инженерия",
   },
   {
     name: "educationProgram",
@@ -56,7 +73,32 @@ const PROFILE_FIELDS: Array<{
     label: "Группа",
     placeholder: "РИС-220941",
   },
+  {
+    name: "urfuPracticeSupervisor",
+    label: "ФИО руководителя практики от УрФУ",
+    placeholder: "Петров Пётр Петрович",
+  },
+  {
+    name: "urfuPracticeSupervisorShortName",
+    label: "Краткое ФИО руководителя практики от УрФУ",
+    placeholder: "Петров П. П.",
+  },
 ];
+
+function toFormData(profile: PracticeProfile): PracticeProfileFormData {
+  return {
+    fullName: profile.fullName ?? "",
+    fullNameGenitive: profile.fullNameGenitive ?? "",
+    directionCode: profile.directionCode ?? "",
+    directionName: profile.directionName ?? "",
+    educationProgram: profile.educationProgram ?? "",
+    group: profile.group ?? "",
+    urfuPracticeSupervisor: profile.urfuPracticeSupervisor ?? "",
+    urfuPracticeSupervisorShortName:
+      profile.urfuPracticeSupervisorShortName ?? "",
+    mainStageWorkList: profile.mainStageWorkList ?? "",
+  };
+}
 
 export default function StudentPracticeProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -83,12 +125,7 @@ export default function StudentPracticeProfilePage() {
           return;
         }
 
-        reset({
-          fullName: profile.fullName ?? "",
-          specialty: profile.specialty ?? "",
-          educationProgram: profile.educationProgram ?? "",
-          group: profile.group ?? "",
-        });
+        reset(toFormData(profile));
       })
       .catch((error: unknown) => {
         if (!isCancelled) {
@@ -115,12 +152,7 @@ export default function StudentPracticeProfilePage() {
     try {
       const { profile } = await profilesApi.updateMine(data);
 
-      reset({
-        fullName: profile.fullName ?? "",
-        specialty: profile.specialty ?? "",
-        educationProgram: profile.educationProgram ?? "",
-        group: profile.group ?? "",
-      });
+      reset(toFormData(profile));
       setIsSaved(true);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Не удалось сохранить профиль");
@@ -181,6 +213,29 @@ export default function StudentPracticeProfilePage() {
                     )}
                   </div>
                 ))}
+
+                <div>
+                  <Label htmlFor="mainStageWorkList">
+                    Перечень работ основного этапа
+                  </Label>
+                  <Textarea
+                    id="mainStageWorkList"
+                    rows={6}
+                    placeholder="Опишите работы, выполняемые во время основного этапа практики"
+                    aria-invalid={Boolean(errors.mainStageWorkList)}
+                    {...register("mainStageWorkList", {
+                      onChange: () => {
+                        setIsSaved(false);
+                        setSaveError("");
+                      },
+                    })}
+                  />
+                  {errors.mainStageWorkList && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.mainStageWorkList.message}
+                    </p>
+                  )}
+                </div>
 
                 {saveError && <p className="text-sm text-red-600">{saveError}</p>}
                 {isSaved && (

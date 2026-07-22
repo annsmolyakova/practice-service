@@ -34,9 +34,18 @@ const API_ERROR_MESSAGES: Record<string, string> = {
     "В отзыве не указан статус приглашения на следующую практику",
   "Practice review suggestions is required": "В отзыве не заполнены предложения",
   "Profile educationProgram is required": "Укажите образовательную программу в профиле",
+  "Profile directionCode is required": "Укажите код направления в профиле",
+  "Profile directionName is required": "Укажите наименование направления в профиле",
   "Profile fullName is required": "Укажите ФИО в профиле",
+  "Profile fullNameGenitive is required":
+    "Укажите ФИО в родительном падеже в профиле",
   "Profile group is required": "Укажите группу в профиле",
-  "Profile specialty is required": "Укажите специальность в профиле",
+  "Profile mainStageWorkList is required":
+    "Укажите перечень работ основного этапа в профиле",
+  "Profile urfuPracticeSupervisor is required":
+    "Укажите ФИО руководителя практики от УрФУ в профиле",
+  "Profile urfuPracticeSupervisorShortName is required":
+    "Укажите краткое ФИО руководителя практики от УрФУ в профиле",
   "Refresh token expired": "Сессия истекла. Войдите снова",
   "Report file is required": "Выберите файл отчёта",
   "Required form field is missing": "Заполните обязательное поле формы",

@@ -18,16 +18,29 @@ export type PracticeProfile = {
   id: string;
   userId: string;
   fullName: string | null;
-  specialty: string | null;
+  fullNameGenitive: string | null;
+  directionCode: string | null;
+  directionName: string | null;
   educationProgram: string | null;
   group: string | null;
+  urfuPracticeSupervisor: string | null;
+  urfuPracticeSupervisorShortName: string | null;
+  mainStageWorkList: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 export type UpdatePracticeProfileInput = Pick<
   PracticeProfile,
-  "fullName" | "specialty" | "educationProgram" | "group"
+  | "fullName"
+  | "fullNameGenitive"
+  | "directionCode"
+  | "directionName"
+  | "educationProgram"
+  | "group"
+  | "urfuPracticeSupervisor"
+  | "urfuPracticeSupervisorShortName"
+  | "mainStageWorkList"
 >;
 
 export type Cohort = {
