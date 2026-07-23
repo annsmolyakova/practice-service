@@ -32,7 +32,6 @@ const EMPTY_PROFILE: PracticeProfileFormData = {
   educationProgram: "",
   group: "",
   urfuPracticeSupervisor: "",
-  urfuPracticeSupervisorShortName: "",
   mainStageWorkList: "",
 };
 
@@ -78,11 +77,6 @@ const PROFILE_FIELDS: Array<{
     label: "ФИО руководителя практики от УрФУ",
     placeholder: "Петров Пётр Петрович",
   },
-  {
-    name: "urfuPracticeSupervisorShortName",
-    label: "Краткое ФИО руководителя практики от УрФУ",
-    placeholder: "Петров П. П.",
-  },
 ];
 
 function toFormData(profile: PracticeProfile): PracticeProfileFormData {
@@ -94,8 +88,6 @@ function toFormData(profile: PracticeProfile): PracticeProfileFormData {
     educationProgram: profile.educationProgram ?? "",
     group: profile.group ?? "",
     urfuPracticeSupervisor: profile.urfuPracticeSupervisor ?? "",
-    urfuPracticeSupervisorShortName:
-      profile.urfuPracticeSupervisorShortName ?? "",
     mainStageWorkList: profile.mainStageWorkList ?? "",
   };
 }

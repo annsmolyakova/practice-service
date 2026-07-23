@@ -39,7 +39,6 @@ export type UpdatePracticeProfileInput = Pick<
   | "educationProgram"
   | "group"
   | "urfuPracticeSupervisor"
-  | "urfuPracticeSupervisorShortName"
   | "mainStageWorkList"
 >;
 

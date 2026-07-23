@@ -44,8 +44,6 @@ const API_ERROR_MESSAGES: Record<string, string> = {
     "Укажите перечень работ основного этапа в профиле",
   "Profile urfuPracticeSupervisor is required":
     "Укажите ФИО руководителя практики от УрФУ в профиле",
-  "Profile urfuPracticeSupervisorShortName is required":
-    "Укажите краткое ФИО руководителя практики от УрФУ в профиле",
   "Refresh token expired": "Сессия истекла. Войдите снова",
   "Report file is required": "Выберите файл отчёта",
   "Required form field is missing": "Заполните обязательное поле формы",

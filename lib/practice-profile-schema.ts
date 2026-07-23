@@ -18,10 +18,6 @@ export const practiceProfileSchema = z.object({
     "ФИО руководителя практики от УрФУ",
     255,
   ),
-  urfuPracticeSupervisorShortName: requiredText(
-    "краткое ФИО руководителя практики от УрФУ",
-    255,
-  ),
   mainStageWorkList: requiredText("перечень работ основного этапа", 5000),
 });
 
