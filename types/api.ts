@@ -163,6 +163,7 @@ export type PracticeApplication = {
   cohort: Cohort;
   track: CohortTrack | null;
   user?: User;
+  review?: Pick<PracticeReview, "isReady"> | null;
   answers: ApplicationAnswer[];
 };
 

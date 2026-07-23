@@ -32,6 +32,26 @@ function formatFileSize(size: number) {
   }).format(size / 1024 / 1024);
 }
 
+function getUnavailableReason(
+  kind: DocumentKind,
+  options: {
+    isReviewReady: boolean;
+    isReportApproved: boolean;
+  },
+) {
+  if (kind === "supervisor-review") {
+    if (!options.isReviewReady) {
+      return "Доступен после заполнения отзыва руководителем.";
+    }
+  }
+
+  if (kind === "report-title-page" && !options.isReportApproved) {
+    return "Доступен после одобрения отчёта администратором.";
+  }
+
+  return "";
+}
+
 export function PracticeDocumentsCard({ application }: PracticeDocumentsCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [report, setReport] = useState<PracticeReport | null>(null);
@@ -230,8 +250,11 @@ export function PracticeDocumentsCard({ application }: PracticeDocumentsCardProp
         <div className="grid gap-4 md:grid-cols-3">
           {generatedDocuments.map((definition) => {
             const error = errors[getDocumentErrorKey(definition.kind)];
-            const needsApprovedReport = definition.kind === "report-title-page";
-            const isUnavailable = needsApprovedReport && !report?.isApproved;
+            const unavailableReason = getUnavailableReason(definition.kind, {
+              isReviewReady: application.review?.isReady ?? false,
+              isReportApproved: report?.isApproved ?? false,
+            });
+            const isUnavailable = Boolean(unavailableReason);
 
             return (
               <div key={definition.kind} className="space-y-3 rounded-lg border p-4">
@@ -245,9 +268,7 @@ export function PracticeDocumentsCard({ application }: PracticeDocumentsCardProp
                   {downloadingKey === definition.kind ? "Формирование..." : "Сформировать DOCX"}
                 </Button>
                 {isUnavailable && (
-                  <p className="text-sm text-slate-600">
-                    Доступен после одобрения отчёта администратором.
-                  </p>
+                  <p className="text-sm text-slate-600">{unavailableReason}</p>
                 )}
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
